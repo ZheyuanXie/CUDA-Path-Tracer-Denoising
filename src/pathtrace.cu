@@ -82,6 +82,24 @@ void pathtraceFree() {
 }
 
 /**
+ * Example function to generate static and test the CUDA-GL interop.
+ * Delete this!
+ */
+__global__ void generateStaticDeleteMe(Camera cam, int iter, glm::vec3 *image) {
+    int x = (blockIdx.x * blockDim.x) + threadIdx.x;
+    int y = (blockIdx.y * blockDim.y) + threadIdx.y;
+
+    if (x < cam.resolution.x && y < cam.resolution.y) {
+        int index = x + (y * cam.resolution.x);
+
+        thrust::default_random_engine rng = random_engine(iter, index, 0);
+        thrust::uniform_real_distribution<float> u01(0, 1);
+
+        image[index] += glm::vec3(u01(rng));
+    }
+}
+
+/**
  * Wrapper for the __global__ call that sets up the kernel calls and does a ton
  * of memory management
  */
@@ -109,6 +127,8 @@ void pathtrace(uchar4 *pbo, int frame, int iter) {
     //   (Easy way is to make them black or background-colored.)
 
     // TODO: perform one iteration of path tracing
+
+    generateStaticDeleteMe<<<blocksPerGrid, blockSize>>>(cam, iter, dev_image);
 
     ///////////////////////////////////////////////////////////////////////////
 
