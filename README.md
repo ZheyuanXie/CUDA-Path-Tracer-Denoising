@@ -61,7 +61,7 @@ In this project, you are given code for:
 * Sphere and box intersection functions
 * Support for saving images
 * Working CUDA-GL interop for previewing your render while it's running
-* A function which generates static.
+* A function which generates random screen noise (instead of an actual render).
 
 You will need to implement the following features:
 
@@ -72,7 +72,9 @@ You will need to implement the following features:
 * Perfectly specular-reflective (mirrored) surfaces
 * Stream compaction optimization
 
-You are also required to implement at least 2 of the following features:
+You are also required to implement at least 2 of the following features.
+Please ask if you need good references (they will be added to this README
+later on). If you find good references, share them.
 
 * Work-efficient stream compaction using shared memory across multiple blocks
   (See *GPU Gems 3* Chapter 39).
@@ -84,7 +86,7 @@ You are also required to implement at least 2 of the following features:
 * Bump mapping
 * Direct lighting (by taking a final ray directly to a random point on an
   emissive object acting as a light source)
-* Animation & motion blur
+* Some method of defining object motion, and motion blur
 * Subsurface scattering
 * Arbitrary mesh loading and rendering (e.g. `obj` files). You can find these
   online or export them from your favorite 3D modeling application.
