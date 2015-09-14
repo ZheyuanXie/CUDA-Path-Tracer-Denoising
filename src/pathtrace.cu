@@ -59,8 +59,8 @@ __global__ void sendImageToPBO(uchar4* pbo, glm::ivec2 resolution,
 }
 
 static Scene *hst_scene;
-// TODO: static variables for device memory, scene info, etc
 static glm::vec3 *dev_image;
+// TODO: static variables for device memory, scene/camera info, etc
 // ...
 
 void pathtraceInit(Scene *scene) {
@@ -68,14 +68,15 @@ void pathtraceInit(Scene *scene) {
     const Camera &cam = hst_scene->state.camera;
     const int pixelcount = cam.resolution.x * cam.resolution.y;
 
-    // TODO: initialize the above static variables added above
     cudaMalloc(&dev_image, pixelcount * sizeof(glm::vec3));
     cudaMemset(dev_image, 0, pixelcount * sizeof(glm::vec3));
+    // TODO: initialize the above static variables added above
 
     checkCUDAError("pathtraceInit");
 }
 
 void pathtraceFree() {
+    cudaFree(dev_image);
     // TODO: clean up the above static variables
 
     checkCUDAError("pathtraceFree");
@@ -83,7 +84,7 @@ void pathtraceFree() {
 
 /**
  * Example function to generate static and test the CUDA-GL interop.
- * Delete this!
+ * Delete this once you're done looking at it!
  */
 __global__ void generateStaticDeleteMe(Camera cam, int iter, glm::vec3 *image) {
     int x = (blockIdx.x * blockDim.x) + threadIdx.x;
@@ -95,6 +96,13 @@ __global__ void generateStaticDeleteMe(Camera cam, int iter, glm::vec3 *image) {
         thrust::default_random_engine rng = random_engine(iter, index, 0);
         thrust::uniform_real_distribution<float> u01(0, 1);
 
+        // CHECKITOUT: Note that on every iteration, noise gets added onto
+        // the image (not replaced). As a result, the image smooths out over
+        // time, since the output image is the contents of this array divided
+        // by the number of iterations.
+        //
+        // Your renderer will do the same thing, and, over time, it will become
+        // smoother.
         image[index] += glm::vec3(u01(rng));
     }
 }

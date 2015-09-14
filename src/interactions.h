@@ -48,17 +48,18 @@ glm::vec3 calculateRandomDirectionInHemisphere(
  * In order to apply multiple effects to one surface, probabilistically choose
  * between them.
  *
- * This method applies its changes to the Ray parameter `r` in place.
+ * This method applies its changes to the Ray parameter `ray` in place.
+ * It also modifies the color `color` of the ray in place.
  *
- * You may need to change the parameter list.
+ * You may need to change the parameter list for your purposes!
  */
 __host__ __device__
-void scatterBSDF(
-        Ray &r,
+void scatterRay(
+        Ray &ray,
+        glm::vec3 &color,
         glm::vec3 intersect,
         glm::vec3 normal,
         glm::vec3 emittedColor,
-        glm::vec3 &color,
         const Material &m,
         thrust::default_random_engine &rng) {
     // TODO: implement this.
