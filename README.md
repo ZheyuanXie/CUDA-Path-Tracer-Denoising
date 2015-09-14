@@ -229,7 +229,8 @@ the middle.
 Please see: [**TIPS FOR WRITING AN AWESOME README**](https://github.com/pjcozzi/Articles/blob/master/CIS565/GitHubRepo/README.md)
 
 * Sell your project
-* Assume the reader has a basic knowledge of path tracing
+* Assume the reader has a little knowledge of path tracing - don't go into
+  detail explaining what it is. Focus on your project.
 * Use this to document what you've done
 * *DO NOT* leave the README to the last minute! It is a crucial part of the
   project, and we will not be able to grade you without a good README.
