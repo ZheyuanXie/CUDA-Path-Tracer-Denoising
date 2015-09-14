@@ -11,7 +11,7 @@ CUDA Path Tracer
 Instructions (delete me)
 ========================
 
-This is due **INSTRUCTOR TODO** evening at midnight.
+This is due Thursday, September 24 evening at midnight.
 
 **Summary:**
 In this project, you'll implement a CUDA-based path tracer capable of rendering
