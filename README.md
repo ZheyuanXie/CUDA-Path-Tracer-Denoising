@@ -213,7 +213,7 @@ the middle.
 * Use of any third-party code must be approved by asking on our Google Group.
 * If it is approved, all students are welcome to use it. Generally, we approve
   use of third-party code that is not a core part of the project. For example,
-  for the ray tracer, we would approve using a third-party library for loading
+  for the path tracer, we would approve using a third-party library for loading
   models, but would not approve copying and pasting a CUDA function for doing
   refraction.
 * Third-party code **MUST** be credited in README.md.
