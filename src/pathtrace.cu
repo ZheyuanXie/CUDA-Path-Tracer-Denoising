@@ -32,7 +32,7 @@ void checkCUDAErrorFn(const char *msg, const char *file, int line) {
 
 __host__ __device__ thrust::default_random_engine random_engine(
         int iter, int index = 0, int depth = 0) {
-    return thrust::default_random_engine(hash((index + 1) * iter) ^ hash(depth));
+    return thrust::default_random_engine(utilhash((index + 1) * iter) ^ utilhash(depth));
 }
 
 //Kernel that writes the image to the OpenGL PBO directly.
