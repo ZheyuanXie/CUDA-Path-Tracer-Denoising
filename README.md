@@ -74,11 +74,16 @@ You will need to implement the following features:
   * Implement antialiasing (by jittering rays within each pixel)
 * Diffuse surfaces
 * Perfectly specular-reflective (mirrored) surfaces
-* Stream compaction optimization
+* Stream compaction optimization. You may use any of:
+  * Your global-memory work-efficient stream compaction implementation.
+  * A shared-memory work-efficient stream compaction (see below).
+  * `thrust::remove_if` or any of the other Thrust stream compaction functions.
 
 You are also required to implement at least 2 of the following features.
 Please ask if you need good references (they will be added to this README
-later on). If you find good references, share them.
+later on). If you find good references, share them! **Extra credit**: implement
+more features on top of the 2 required ones, with point value up to +20/100 at
+the grader's discretion (based on difficulty and coolness).
 
 * Work-efficient stream compaction using shared memory across multiple blocks
   (See *GPU Gems 3* Chapter 39).
@@ -122,8 +127,8 @@ search for `CHECKITOUT`. You'll have to implement parts labeled with `TODO`.
     scene data (e.g. geometry, materials) from `Scene`.
   * `pathtraceFree` frees memory allocated by `pathtraceInit`
   * `pathtrace` performs one iteration of the rendering - it handles kernel
-    launches, memory copies, transferring some data, etc. See comments for
-    a low-level overview.
+    launches, memory copies, transferring some data, etc.
+    * See comments for a low-level path tracing recap.
 * `src/intersections.h`: ray intersection functions
   * `boxIntersectionTest` and `sphereIntersectionTest`, which take in a ray and
     a geometry object and return various properties of the intersection.
@@ -154,7 +159,7 @@ thrust::default_random_engine rng = random_engine(iter, index, depth);
 
 This project uses GLM for linear algebra.
 
-On NVIDIA cards pre-Fermi (pre-DX12), you may have issues with mat4
+On NVIDIA cards pre-Fermi (pre-DX12), you may have issues with mat4-vec4
 multiplication. If you have one of these cards, be careful! If you have issues,
 you might need to grab `cudamat4` and `multiplyMV` from the
 [Fall 2014 project](https://github.com/CIS565-Fall-2014/Project3-Pathtracer).
@@ -230,10 +235,12 @@ the middle.
 
 Please see: [**TIPS FOR WRITING AN AWESOME README**](https://github.com/pjcozzi/Articles/blob/master/CIS565/GitHubRepo/README.md)
 
-* Sell your project
+* Sell your project.
 * Assume the reader has a little knowledge of path tracing - don't go into
   detail explaining what it is. Focus on your project.
-* Use this to document what you've done
+* Don't talk about it like it's an assignment - don't say what is and isn't
+  "extra" or "extra credit." Talk about what you accomplished.
+* Use this to document what you've done.
 * *DO NOT* leave the README to the last minute! It is a crucial part of the
   project, and we will not be able to grade you without a good README.
 
@@ -241,7 +248,7 @@ In addition:
 
 * This is a renderer, so include images that you've made!
 * Be sure to back your claims for optimization with numbers and comparisons.
-* If you reference any other material, please provide a link to it
+* If you reference any other material, please provide a link to it.
 * You wil not be graded on how fast your path tracer runs, but getting close to
   real-time is always nice!
 * If you have a fast GPU renderer, it is very good to show case this with a
@@ -268,8 +275,8 @@ list of `SOURCE_FILES`), you must test that your project can build in Moore
 1. Open a GitHub pull request so that we can see that you have finished.
    The title should be "Submission: YOUR NAME".
 2. Send an email to the TA (gmail: kainino1+cis565@) with:
-   * **Subject**: in the form of `[CIS565] Project N: PENNKEY`
-   * Direct link to your pull request on GitHub
+   * **Subject**: in the form of `[CIS565] Project N: PENNKEY`.
+   * Direct link to your pull request on GitHub.
    * Estimate the amount of time you spent on the project.
    * If there were any outstanding problems, or if you did any extra
      work, *briefly* explain.
