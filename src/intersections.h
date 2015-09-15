@@ -36,8 +36,8 @@ __host__ __device__ glm::vec3 multiplyMV(glm::mat4 m, glm::vec4 v) {
 
 // CHECKITOUT
 /**
- * Test intersection between a ray and a cube from -0.5 to 0.5 in each axis,
- * centered at the origin
+ * Test intersection between a ray and a transformed cube. Untransformed,
+ * the cube ranges from -0.5 to 0.5 in each axis and is centered at the origin.
  *
  * @param intersectionPoint  Output parameter for point of intersection.
  * @param normal             Output parameter for surface normal.
@@ -91,8 +91,8 @@ __host__ __device__ float boxIntersectionTest(Geom box, Ray r,
 
 // CHECKITOUT
 /**
- * Test intersection between a ray and a spherewith radius 1.0,
- * centered at the origin
+ * Test intersection between a ray and a transformed sphere. Untransformed,
+ * the sphere always has radius 0.5 and is centered at the origin.
  *
  * @param intersectionPoint  Output parameter for point of intersection.
  * @param normal             Output parameter for surface normal.

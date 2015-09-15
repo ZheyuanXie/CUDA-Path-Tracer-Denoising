@@ -56,8 +56,6 @@ RES         800 800
 FOVY        45
 ITERATIONS  5000
 DEPTH       8
-DOF_DIST    6.0
-DOF_APER    0.001
 FILE        cornell
 frame 0
 EYE         0.0 5 10.5
