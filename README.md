@@ -190,6 +190,7 @@ Cameras are defined in the following fashion:
 * ITERATIONS (float interations) //how many iterations to refine the image,
   only relevant for supersampled antialiasing, depth of field, area lights, and
   other distributed raytracing applications
+* DEPTH (int depth) //maximum depth (number of times the path will bounce)
 * FILE (string filename) //file to output render to upon completion
 * frame (frame number) //start of a frame
 * EYE (float x) (float y) (float z) //camera's position in worldspace
