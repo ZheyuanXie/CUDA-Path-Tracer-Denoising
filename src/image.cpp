@@ -1,4 +1,5 @@
 #include <iostream>
+#include <string>
 #include <stb_image_write.h>
 
 #include "image.h"
@@ -32,7 +33,7 @@ void image::savePNG(const std::string &baseFilename) {
 
     std::string filename = baseFilename + ".png";
     stbi_write_png(filename.c_str(), xSize, ySize, 3, bytes, xSize * 3);
-    std::cout << "Saved " + filename + "." << std::endl;
+    std::cout << "Saved " << filename << "." << std::endl;
 
     delete[] bytes;
 }

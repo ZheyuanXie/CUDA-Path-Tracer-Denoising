@@ -1,3 +1,5 @@
+#define _CRT_SECURE_NO_DEPRECATE
+#include <ctime>
 #include "main.h"
 #include "preview.h"
 

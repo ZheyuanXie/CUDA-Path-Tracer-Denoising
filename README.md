@@ -43,6 +43,7 @@ part of the base code as you please. **This is YOUR project.**
 
 The main function requires a scene description file. Call the program with
 one as an argument: `cis565_path_tracer scene/sphere.txt`.
+(In Visual Studio, `../scene/sphere.txt`.)
 
 If you are using Visual Studio, you can set this in the Debugging > Command
 Arguments section in the Project properties. Make sure you get the path right -
@@ -266,7 +267,7 @@ list of `SOURCE_FILES`), you must test that your project can build in Moore
 1. Open a GitHub pull request so that we can see that you have finished.
    The title should be "Submission: YOUR NAME".
 2. Send an email to the TA (gmail: kainino1+cis565@) with:
-   * **Subject**: in the form of `[CIS565] Project 2: PENNKEY`
+   * **Subject**: in the form of `[CIS565] Project N: PENNKEY`
    * Direct link to your pull request on GitHub
    * Estimate the amount of time you spent on the project.
    * If there were any outstanding problems, or if you did any extra
