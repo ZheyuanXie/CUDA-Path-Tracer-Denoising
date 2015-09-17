@@ -86,7 +86,7 @@ void pathtraceFree() {
  * Example function to generate static and test the CUDA-GL interop.
  * Delete this once you're done looking at it!
  */
-__global__ void generateStaticDeleteMe(Camera cam, int iter, glm::vec3 *image) {
+__global__ void generateNoiseDeleteMe(Camera cam, int iter, glm::vec3 *image) {
     int x = (blockIdx.x * blockDim.x) + threadIdx.x;
     int y = (blockIdx.y * blockDim.y) + threadIdx.y;
 
@@ -149,7 +149,7 @@ void pathtrace(uchar4 *pbo, int frame, int iter) {
 
     // TODO: perform one iteration of path tracing
 
-    generateStaticDeleteMe<<<blocksPerGrid, blockSize>>>(cam, iter, dev_image);
+    generateNoiseDeleteMe<<<blocksPerGrid, blockSize>>>(cam, iter, dev_image);
 
     ///////////////////////////////////////////////////////////////////////////
 
