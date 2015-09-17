@@ -58,8 +58,8 @@ __global__ void sendImageToPBO(uchar4* pbo, glm::ivec2 resolution,
     }
 }
 
-static Scene *hst_scene;
-static glm::vec3 *dev_image;
+static Scene *hst_scene = NULL;
+static glm::vec3 *dev_image = NULL;
 // TODO: static variables for device memory, scene/camera info, etc
 // ...
 
@@ -76,7 +76,7 @@ void pathtraceInit(Scene *scene) {
 }
 
 void pathtraceFree() {
-    cudaFree(dev_image);
+    cudaFree(dev_image);  // no-op if dev_image is null
     // TODO: clean up the above static variables
 
     checkCUDAError("pathtraceFree");
