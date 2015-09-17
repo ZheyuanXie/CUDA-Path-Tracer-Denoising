@@ -203,7 +203,6 @@ Cameras are defined in the following fashion:
   other distributed raytracing applications
 * DEPTH (int depth) //maximum depth (number of times the path will bounce)
 * FILE (string filename) //file to output render to upon completion
-* frame (frame number) //indicates start of one frame of parameters - ignore this
 * EYE (float x) (float y) (float z) //camera's position in worldspace
 * VIEW (float x) (float y) (float z) //camera's view direction
 * UP (float x) (float y) (float z) //camera's up vector
@@ -215,7 +214,6 @@ Objects are defined in the following fashion:
   "mesh". Note that cubes and spheres are unit sized and centered at the
   origin.
 * material (material ID) //material to assign this object
-* frame (frame number) //indicates start of one frame of parameters - ignore this
 * TRANS (float transx) (float transy) (float transz) //translation
 * ROTAT (float rotationx) (float rotationy) (float rotationz) //rotation
 * SCALE (float scalex) (float scaley) (float scalez) //scale

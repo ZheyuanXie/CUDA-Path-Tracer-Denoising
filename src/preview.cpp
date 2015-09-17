@@ -139,8 +139,6 @@ bool init() {
         exit(EXIT_FAILURE);
     }
 
-    width = 800;
-    height = 800;
     window = glfwCreateWindow(width, height, "CIS 565 Path Tracer", NULL, NULL);
     if (!window) {
         glfwTerminate();
