@@ -6,9 +6,6 @@ SPECRGB     0 0 0
 REFL        0
 REFR        0
 REFRIOR     0
-SCATTER     0
-ABSCOEFF    0 0 0
-RSCTCOEFF   0
 EMITTANCE   5
 
 // Camera
@@ -18,7 +15,6 @@ FOVY        45
 ITERATIONS  5000
 DEPTH       8
 FILE        sphere
-frame 0
 EYE         0.0 5 10.5
 VIEW        0 0 -1
 UP          0 1 0
@@ -27,7 +23,6 @@ UP          0 1 0
 OBJECT 0
 sphere
 material 0
-frame 0
 TRANS       0 0 0
 ROTAT       0 0 0
 SCALE       3 3 3

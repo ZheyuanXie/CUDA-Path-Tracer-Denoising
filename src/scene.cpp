@@ -68,19 +68,12 @@ int Scene::loadGeom(string objectid) {
             vector<string> tokens = utilityCore::tokenizeString(line);
 
             //load tranformations
-            for (int i = 0; i < 3; i++) {
-                glm::vec3 translation;
-                glm::vec3 rotation;
-                glm::vec3 scale;
-                utilityCore::safeGetline(fp_in, line);
-                tokens = utilityCore::tokenizeString(line);
-                if (strcmp(tokens[0].c_str(), "TRANS") == 0) {
-                    newGeom.translation = glm::vec3(atof(tokens[1].c_str()), atof(tokens[2].c_str()), atof(tokens[3].c_str()));
-                } else if (strcmp(tokens[0].c_str(), "ROTAT") == 0) {
-                    newGeom.rotation = glm::vec3(atof(tokens[1].c_str()), atof(tokens[2].c_str()), atof(tokens[3].c_str()));
-                } else if (strcmp(tokens[0].c_str(), "SCALE") == 0) {
-                    newGeom.scale = glm::vec3(atof(tokens[1].c_str()), atof(tokens[2].c_str()), atof(tokens[3].c_str()));
-                }
+            if (strcmp(tokens[0].c_str(), "TRANS") == 0) {
+                newGeom.translation = glm::vec3(atof(tokens[1].c_str()), atof(tokens[2].c_str()), atof(tokens[3].c_str()));
+            } else if (strcmp(tokens[0].c_str(), "ROTAT") == 0) {
+                newGeom.rotation = glm::vec3(atof(tokens[1].c_str()), atof(tokens[2].c_str()), atof(tokens[3].c_str()));
+            } else if (strcmp(tokens[0].c_str(), "SCALE") == 0) {
+                newGeom.scale = glm::vec3(atof(tokens[1].c_str()), atof(tokens[2].c_str()), atof(tokens[3].c_str()));
             }
 
             utilityCore::safeGetline(fp_in, line);
@@ -125,19 +118,12 @@ int Scene::loadCamera() {
     utilityCore::safeGetline(fp_in, line);
     while (!line.empty() && fp_in.good()) {
         vector<string> tokens = utilityCore::tokenizeString(line);
-
-        //load camera properties
-        for (int i = 0; i < 3; i++) {
-            //glm::vec3 translation; glm::vec3 rotation; glm::vec3 scale;
-            utilityCore::safeGetline(fp_in, line);
-            tokens = utilityCore::tokenizeString(line);
-            if (strcmp(tokens[0].c_str(), "EYE") == 0) {
-                camera.position = glm::vec3(atof(tokens[1].c_str()), atof(tokens[2].c_str()), atof(tokens[3].c_str()));
-            } else if (strcmp(tokens[0].c_str(), "VIEW") == 0) {
-                camera.view = glm::vec3(atof(tokens[1].c_str()), atof(tokens[2].c_str()), atof(tokens[3].c_str()));
-            } else if (strcmp(tokens[0].c_str(), "UP") == 0) {
-                camera.up = glm::vec3(atof(tokens[1].c_str()), atof(tokens[2].c_str()), atof(tokens[3].c_str()));
-            }
+        if (strcmp(tokens[0].c_str(), "EYE") == 0) {
+            camera.position = glm::vec3(atof(tokens[1].c_str()), atof(tokens[2].c_str()), atof(tokens[3].c_str()));
+        } else if (strcmp(tokens[0].c_str(), "VIEW") == 0) {
+            camera.view = glm::vec3(atof(tokens[1].c_str()), atof(tokens[2].c_str()), atof(tokens[3].c_str()));
+        } else if (strcmp(tokens[0].c_str(), "UP") == 0) {
+            camera.up = glm::vec3(atof(tokens[1].c_str()), atof(tokens[2].c_str()), atof(tokens[3].c_str()));
         }
 
         utilityCore::safeGetline(fp_in, line);
@@ -168,7 +154,7 @@ int Scene::loadMaterial(string materialid) {
         Material newMaterial;
 
         //load static properties
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 7; i++) {
             string line;
             utilityCore::safeGetline(fp_in, line);
             vector<string> tokens = utilityCore::tokenizeString(line);
