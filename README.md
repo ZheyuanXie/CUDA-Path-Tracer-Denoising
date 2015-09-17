@@ -30,6 +30,11 @@ base code is meant to serve as a strong starting point for a CUDA path tracer,
 you are not required to use it if you don't want to. You may also change any
 part of the base code as you please. **This is YOUR project.**
 
+**Recommendation:** Every image you save should automatically get a different
+filename. Don't delete all of them! For the benefit of your README, keep a
+bunch of them around so you can pick a few to document your progress at the
+end.
+
 ### Contents
 
 * `src/` C++/CUDA source files.
