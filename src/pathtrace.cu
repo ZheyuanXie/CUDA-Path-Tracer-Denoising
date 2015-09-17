@@ -127,13 +127,22 @@ void pathtrace(uchar4 *pbo, int frame, int iter) {
     // Recap:
     // * Initialize array of path rays (using rays that come out of the camera)
     //   * You can pass the Camera object to that kernel.
+    //   * Each path ray is a (ray, color) pair, where color starts as the
+    //     multiplicative identity, white = (1, 1, 1).
+    //   * For debugging, you can output your ray directions as colors.
     // * For each depth:
-    //   * Compute one ray along each path - many will terminate.
+    //   * Compute one new (ray, color) pair along each path - note
+    //     that many rays will terminate by hitting a light or nothing at all.
     //     You'll have to decide how to represent your path rays and how
     //     you'll mark terminated rays.
+    //     * Color is attenuated (multiplied) by reflections off of any object
+    //       surface.
+    //     * You can debug your ray-scene intersections by displaying various
+    //       values as colors, e.g., the first surface normal, the first bounced
+    //       ray direction, the first unlit material color, etc.
     //   * Add all of the terminated rays' results into the appropriate pixels.
     //   * Stream compact away all of the terminated paths.
-    //     You may use your implementation or `thrust::remove_if` or its
+    //     You may use either your implementation or `thrust::remove_if` or its
     //     cousins.
     // * Finally, handle all of the paths that still haven't terminated.
     //   (Easy way is to make them black or background-colored.)
