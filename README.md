@@ -101,6 +101,7 @@ the grader's discretion (based on difficulty and coolness).
   online or export them from your favorite 3D modeling application.
   With approval, you may use a third-party OBJ loading code to bring the data
   into C++.
+  * You can use the triangle intersection function `glm::intersectRayTriangle`.
 
 This 'extra features' list is not comprehensive. If you have a particular idea
 you would like to implement (e.g. acceleration structures, etc.), please
