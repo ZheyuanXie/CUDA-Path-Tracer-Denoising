@@ -59,7 +59,6 @@ void scatterRay(
         glm::vec3 &color,
         glm::vec3 intersect,
         glm::vec3 normal,
-        glm::vec3 emittedColor,
         const Material &m,
         thrust::default_random_engine &rng) {
     // TODO: implement this.
