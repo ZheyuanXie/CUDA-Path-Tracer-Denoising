@@ -131,10 +131,10 @@ void pathtrace(uchar4 *pbo, int frame, int iter) {
     //     multiplicative identity, white = (1, 1, 1).
     //   * For debugging, you can output your ray directions as colors.
     // * For each depth:
-    //   * Compute one new (ray, color) pair along each path - note
-    //     that many rays will terminate by hitting a light or nothing at all.
-    //     You'll have to decide how to represent your path rays and how
-    //     you'll mark terminated rays.
+    //   * Compute one new (ray, color) pair along each path (using scatterRay).
+    //     Note that many rays will terminate by hitting a light or hitting
+    //     nothing at all. You'll have to decide how to represent your path rays
+    //     and how you'll mark terminated rays.
     //     * Color is attenuated (multiplied) by reflections off of any object
     //       surface.
     //     * You can debug your ray-scene intersections by displaying various
