@@ -187,9 +187,6 @@ Materials are defined in the following fashion:
 * REFL (bool refl) //reflectivity flag, 0 for no, 1 for yes
 * REFR (bool refr) //refractivity flag, 0 for no, 1 for yes
 * REFRIOR (float ior) //index of refraction for Fresnel effects
-* SCATTER (float scatter) //scatter flag, 0 for no, 1 for yes
-* ABSCOEFF (float r) (float b) (float g) //absorption coefficient for scattering
-* RSCTCOEFF (float rsctcoeff) //reduced scattering coefficient
 * EMITTANCE (float emittance) //the emittance of the material. Anything >0
   makes the material a light source.
 
