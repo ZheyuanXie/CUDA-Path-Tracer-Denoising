@@ -47,6 +47,14 @@ glm::vec3 calculateRandomDirectionInHemisphere(
  * A perfect specular surface scatters in the reflected ray direction.
  * In order to apply multiple effects to one surface, probabilistically choose
  * between them.
+ * 
+ * The visual effect you want is to straight-up add the diffuse and specular
+ * components. You can do this in a few ways:
+ * - Always take a 50/50 split between a diffuse bounce and a specular bounce,
+ *   but multiply the result of either one by 1/0.5 to cancel the 0.5 chance
+ *   of it happening.
+ * - Pick the split based on the intensity of each color, and multiply each
+ *   branch result by the inverse of that branch's probability (same as above).
  *
  * This method applies its changes to the Ray parameter `ray` in place.
  * It also modifies the color `color` of the ray in place.
