@@ -6,9 +6,6 @@ SPECRGB     0 0 0
 REFL        0
 REFR        0
 REFRIOR     0
-SCATTER     0
-ABSCOEFF    0 0 0
-RSCTCOEFF   0
 EMITTANCE   5
 
 // Diffuse white
@@ -19,9 +16,6 @@ SPECRGB     1 1 1
 REFL        0
 REFR        0
 REFRIOR     0
-SCATTER     0
-ABSCOEFF    0 0 0
-RSCTCOEFF   0
 EMITTANCE   0
 
 // Diffuse red
@@ -32,9 +26,6 @@ SPECRGB     1 1 1
 REFL        0
 REFR        0
 REFRIOR     0
-SCATTER     0
-ABSCOEFF    0 0 0
-RSCTCOEFF   0
 EMITTANCE   0
 
 // Diffuse green
@@ -45,9 +36,6 @@ SPECRGB     1 1 1
 REFL        0
 REFR        0
 REFRIOR     0
-SCATTER     0
-ABSCOEFF    0 0 0
-RSCTCOEFF   0
 EMITTANCE   0
 
 // Camera
