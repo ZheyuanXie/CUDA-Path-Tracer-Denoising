@@ -79,6 +79,7 @@ You will need to implement the following features:
   * Implement antialiasing (by jittering rays within each pixel)
 * Diffuse surfaces
 * Perfectly specular-reflective (mirrored) surfaces
+  * See notes on diffuse/specular in `scatterRay`
 * Stream compaction optimization. You may use any of:
   * Your global-memory work-efficient stream compaction implementation.
   * A shared-memory work-efficient stream compaction (see below).
@@ -96,6 +97,7 @@ the grader's discretion (based on difficulty and coolness).
   * Refraction (e.g. glass/water) with Frensel effects using Schlick's
     approximation or more accurate methods
   * Physically-based depth-of-field (by jittering rays within an aperture)
+  * Recommended but not required: non-perfect specular surfaces
 * Texture mapping
 * Bump mapping
 * Direct lighting (by taking a final ray directly to a random point on an
