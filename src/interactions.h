@@ -50,7 +50,9 @@ glm::vec3 calculateRandomDirectionInHemisphere(
  * 
  * The visual effect you want is to straight-up add the diffuse and specular
  * components. You can do this in a few ways:
- * - Always take a 50/50 split between a diffuse bounce and a specular bounce,
+ * - (NOT RECOMMENDED - converges slowly or badly especially for pure-diffuse
+ *   or pure-specular. In principle this correct, though.)
+ *   Always take a 50/50 split between a diffuse bounce and a specular bounce,
  *   but multiply the result of either one by 1/0.5 to cancel the 0.5 chance
  *   of it happening.
  * - Pick the split based on the intensity of each color, and multiply each
