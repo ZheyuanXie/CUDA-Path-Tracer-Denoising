@@ -79,7 +79,7 @@ You will need to implement the following features:
   * Implement antialiasing (by jittering rays within each pixel)
 * Diffuse surfaces
 * Perfectly specular-reflective (mirrored) surfaces
-  * See notes on diffuse/specular in `scatterRay`
+  * See notes on diffuse/specular in `scatterRay` and on specular below
 * Stream compaction optimization. You may use any of:
   * Your global-memory work-efficient stream compaction implementation.
   * A shared-memory work-efficient stream compaction (see below).
@@ -162,6 +162,21 @@ combination of index, iteration, and depth as the seed:
 ```
 thrust::default_random_engine rng = random_engine(iter, index, depth);
 ```
+
+### Specular Lighting
+
+In path tracing, like diffuse materials, specular materials are
+simulated using a probability distribution instead computing the
+strength of a ray bounce based on angles.
+
+Equations 7, 8, and 9 of
+[GPU Gems 3 chapter 20](http://http.developer.nvidia.com/GPUGems3/gpugems3_ch20.html)
+give the formulas for generating a random specular ray. (Note that
+there is a typographical error: χ in the text = ξ in the formulas.)
+
+Also see the notes in `scatterRay` for probability splits between
+diffuse/specular/other material types.
+
 
 ### Notes on GLM
 
