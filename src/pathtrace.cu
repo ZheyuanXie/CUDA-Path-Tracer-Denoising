@@ -30,8 +30,8 @@ void checkCUDAErrorFn(const char *msg, const char *file, int line) {
     exit(EXIT_FAILURE);
 }
 
-__host__ __device__ thrust::default_random_engine random_engine(
-        int iter, int index = 0, int depth = 0) {
+__host__ __device__
+thrust::default_random_engine makeSeededRandomEngine(int iter, int index, int depth) {
     return thrust::default_random_engine(utilhash((index + 1) * iter) ^ utilhash(depth));
 }
 
@@ -93,7 +93,7 @@ __global__ void generateNoiseDeleteMe(Camera cam, int iter, glm::vec3 *image) {
     if (x < cam.resolution.x && y < cam.resolution.y) {
         int index = x + (y * cam.resolution.x);
 
-        thrust::default_random_engine rng = random_engine(iter, index, 0);
+        thrust::default_random_engine rng = makeSeededRandomEngine(iter, index, 0);
         thrust::uniform_real_distribution<float> u01(0, 1);
 
         // CHECKITOUT: Note that on every iteration, noise gets added onto
