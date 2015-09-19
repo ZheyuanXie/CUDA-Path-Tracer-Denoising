@@ -49,7 +49,8 @@ glm::vec3 calculateRandomDirectionInHemisphere(
  * between them.
  * 
  * The visual effect you want is to straight-up add the diffuse and specular
- * components. You can do this in a few ways:
+ * components. You can do this in a few ways. This logic also applies to
+ * combining other types of materias (such as refractive).
  * - (NOT RECOMMENDED - converges slowly or badly especially for pure-diffuse
  *   or pure-specular. In principle this correct, though.)
  *   Always take a 50/50 split between a diffuse bounce and a specular bounce,
