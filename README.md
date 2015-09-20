@@ -47,8 +47,8 @@ end.
 ### Running the code
 
 The main function requires a scene description file. Call the program with
-one as an argument: `cis565_path_tracer scene/sphere.txt`.
-(In Visual Studio, `../scene/sphere.txt`.)
+one as an argument: `cis565_path_tracer scenes/sphere.txt`.
+(In Visual Studio, `../scenes/sphere.txt`.)
 
 If you are using Visual Studio, you can set this in the Debugging > Command
 Arguments section in the Project properties. Make sure you get the path right -
