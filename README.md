@@ -204,8 +204,7 @@ Materials are defined in the following fashion:
 * REFL (bool refl) //reflectivity flag, 0 for no, 1 for yes
 * REFR (bool refr) //refractivity flag, 0 for no, 1 for yes
 * REFRIOR (float ior) //index of refraction for Fresnel effects
-* EMITTANCE (float emittance) //the emittance of the material. Anything >0
-  makes the material a light source.
+* EMITTANCE (float emittance) //the emittance strength of the material. Material is a light source iff emittance > 0.
 
 Cameras are defined in the following fashion:
 
