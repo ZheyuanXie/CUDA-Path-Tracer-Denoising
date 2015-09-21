@@ -14,7 +14,7 @@ project, and we will not be able to grade you without a good README.
 Instructions (delete me)
 ========================
 
-This is due Tuesday, September 29 evening at midnight.
+This is **NOW** due ~~Thursday, September 24~~ **Tuesday, September 29** evening at midnight.
 
 **Summary:**
 In this project, you'll implement a CUDA-based path tracer capable of rendering
