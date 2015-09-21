@@ -122,11 +122,10 @@ void pathtrace(uchar4 *pbo, int frame, int iter) {
     const Camera &cam = hst_scene->state.camera;
     const int pixelcount = cam.resolution.x * cam.resolution.y;
 
-    const int blockSideLength = 8;
-    const dim3 blockSize(blockSideLength, blockSideLength);
-    const dim3 blocksPerGrid(
-            (cam.resolution.x + blockSize.x - 1) / blockSize.x,
-            (cam.resolution.y + blockSize.y - 1) / blockSize.y);
+    const dim3 blockSize2d(8, 8);
+    const dim3 blocksPerGrid2d(
+            (cam.resolution.x + blockSize2d.x - 1) / blockSize2d.x,
+            (cam.resolution.y + blockSize2d.y - 1) / blockSize2d.y);
 
     ///////////////////////////////////////////////////////////////////////////
 
@@ -150,17 +149,19 @@ void pathtrace(uchar4 *pbo, int frame, int iter) {
     //   * Stream compact away all of the terminated paths.
     //     You may use either your implementation or `thrust::remove_if` or its
     //     cousins.
+    //     * Note that you can't really use a 2D kernel launch any more - switch
+    //       to 1D.
     // * Finally, handle all of the paths that still haven't terminated.
     //   (Easy way is to make them black or background-colored.)
 
     // TODO: perform one iteration of path tracing
 
-    generateNoiseDeleteMe<<<blocksPerGrid, blockSize>>>(cam, iter, dev_image);
+    generateNoiseDeleteMe<<<blocksPerGrid2d, blockSize2d>>>(cam, iter, dev_image);
 
     ///////////////////////////////////////////////////////////////////////////
 
     // Send results to OpenGL buffer for rendering
-    sendImageToPBO<<<blocksPerGrid, blockSize>>>(pbo, cam.resolution, iter, dev_image);
+    sendImageToPBO<<<blocksPerGrid2d, blockSize2d>>>(pbo, cam.resolution, iter, dev_image);
 
     // Retrieve image from GPU
     cudaMemcpy(hst_scene->state.image.data(), dev_image,
