@@ -85,7 +85,7 @@ You will need to implement the following features:
   * A shared-memory work-efficient stream compaction (see below).
   * `thrust::remove_if` or any of the other Thrust stream compaction functions.
 * **NEWLY ADDED:** Work-efficient stream compaction using shared memory across
-  multiple blocks (See *GPU Gems 3* Chapter 39).
+  multiple blocks. (See [*GPU Gems 3*, Chapter 39](http://http.developer.nvidia.com/GPUGems3/gpugems3_ch39.html).)
 
 You are also required to implement at least 2 of the following features. Please
 ask if you need good references. If you find good references, share them!
@@ -96,15 +96,15 @@ with point value up to +20/100 atthe grader's discretion
 * **NOW REQUIRED - NOT AN EXTRA:** ~~Work-efficient stream compaction (see above).~~
 * These 2 smaller features:
   * Refraction (e.g. glass/water) with Frensel effects using Schlick's
-    approximation or more accurate methods
-  * Physically-based depth-of-field (by jittering rays within an aperture)
-  * Recommended but not required: non-perfect specular surfaces
-* Texture mapping
-* Bump mapping
+    approximation or more accurate methods.
+  * Physically-based depth-of-field (by jittering rays within an aperture).
+  * Recommended but not required: non-perfect specular surfaces. (See below.)
+* Texture mapping.
+* Bump mapping.
 * Direct lighting (by taking a final ray directly to a random point on an
-  emissive object acting as a light source)
-* Some method of defining object motion, and motion blur
-* Subsurface scattering
+  emissive object acting as a light source).
+* Some method of defining object motion, and motion blur.
+* Subsurface scattering.
 * Arbitrary mesh loading and rendering (e.g. `obj` files). You can find these
   online or export them from your favorite 3D modeling application.
   With approval, you may use a third-party OBJ loading code to bring the data
@@ -171,7 +171,7 @@ simulated using a probability distribution instead computing the
 strength of a ray bounce based on angles.
 
 Equations 7, 8, and 9 of
-[GPU Gems 3 chapter 20](http://http.developer.nvidia.com/GPUGems3/gpugems3_ch20.html)
+[*GPU Gems 3*, Chapter 20](http://http.developer.nvidia.com/GPUGems3/gpugems3_ch20.html)
 give the formulas for generating a random specular ray. (Note that
 there is a typographical error: χ in the text = ξ in the formulas.)
 
