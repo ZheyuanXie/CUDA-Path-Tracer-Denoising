@@ -51,13 +51,15 @@ glm::vec3 calculateRandomDirectionInHemisphere(
  * The visual effect you want is to straight-up add the diffuse and specular
  * components. You can do this in a few ways. This logic also applies to
  * combining other types of materias (such as refractive).
- * - (NOT RECOMMENDED - converges slowly or badly especially for pure-diffuse
- *   or pure-specular. In principle this correct, though.)
- *   Always take a 50/50 split between a diffuse bounce and a specular bounce,
- *   but multiply the result of either one by 1/0.5 to cancel the 0.5 chance
- *   of it happening.
- * - Pick the split based on the intensity of each color, and multiply each
- *   branch result by the inverse of that branch's probability (same as above).
+ * 
+ * - Always take an even (50/50) split between a each effect (a diffuse bounce
+ *   and a specular bounce), but divide the resulting color of either branch
+ *   by its probability (0.5), to counteract the chance (0.5) of the branch
+ *   being taken.
+ *   - This way is inefficient, but serves as a good starting point - it
+ *     converges slowly, especially for pure-diffuse or pure-specular.
+ * - Pick the split based on the intensity of each material color, and divide
+ *   branch result by that branch's probability (whatever probability you use).
  *
  * This method applies its changes to the Ray parameter `ray` in place.
  * It also modifies the color `color` of the ray in place.
