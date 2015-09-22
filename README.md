@@ -75,17 +75,15 @@ In this project, you are given code for:
 You will need to implement the following features:
 
 * Raycasting from the camera into the scene through an imaginary grid of pixels
-  (the screen)
-  * Implement antialiasing (by jittering rays within each pixel)
-* Diffuse surfaces
-* Perfectly specular-reflective (mirrored) surfaces
-  * See notes on diffuse/specular in `scatterRay` and on specular below
-* Stream compaction optimization. You may use any of:
-  * Your global-memory work-efficient stream compaction implementation.
-  * A shared-memory work-efficient stream compaction (see below).
-  * `thrust::remove_if` or any of the other Thrust stream compaction functions.
+  (the screen).
+  * Implement simple antialiasing (by jittering rays within each pixel).
+* Diffuse surfaces (using provided cosine-weighted scatter function) [PBRT 8.3].
+* Perfectly specular-reflective (mirrored) surfaces.
+  * See notes on diffuse/specular in `scatterRay` and on imperfect specular below.
+* Stream compaction optimization, using:
 * **NEWLY ADDED:** Work-efficient stream compaction using shared memory across
-  multiple blocks. (See [*GPU Gems 3*, Chapter 39](http://http.developer.nvidia.com/GPUGems3/gpugems3_ch39.html).)
+  multiple blocks. (See
+  [*GPU Gems 3*, Chapter 39](http://http.developer.nvidia.com/GPUGems3/gpugems3_ch39.html).)
 
 You are also required to implement at least 2 of the following features. Please
 ask if you need good references. If you find good references, share them!
@@ -95,16 +93,19 @@ with point value up to +20/100 atthe grader's discretion
 
 * **NOW REQUIRED - NOT AN EXTRA:** ~~Work-efficient stream compaction (see above).~~
 * These 2 smaller features:
-  * Refraction (e.g. glass/water) with Frensel effects using Schlick's
-    approximation or more accurate methods.
-  * Physically-based depth-of-field (by jittering rays within an aperture).
+  * Refraction (e.g. glass/water) [PBRT 8.2] with Frensel effects using
+    [Schlick's approximation](https://en.wikipedia.org/wiki/Schlick's_approximation)
+    or more accurate methods [PBRT 8.5].
+  * Physically-based depth-of-field (by jittering rays within an aperture)
+    [PBRT 6.2.3].
   * Recommended but not required: non-perfect specular surfaces. (See below.)
-* Texture mapping.
-* Bump mapping.
+* Texture mapping [PBRT 10.4].
+* Bump mapping [PBRT 9.3].
 * Direct lighting (by taking a final ray directly to a random point on an
-  emissive object acting as a light source).
-* Some method of defining object motion, and motion blur.
-* Subsurface scattering.
+  emissive object acting as a light source). Or more advanced [PBRT 15.1.1].
+* Some method of defining object motion, and motion blur by averaging samples
+  at different times in the animation.
+* Subsurface scattering [PBRT 5.6.2, 11.6].
 * Arbitrary mesh loading and rendering (e.g. `obj` files). You can find these
   online or export them from your favorite 3D modeling application.
   With approval, you may use a third-party OBJ loading code to bring the data
@@ -164,7 +165,7 @@ combination of index, iteration, and depth as the seed:
 thrust::default_random_engine rng = random_engine(iter, index, depth);
 ```
 
-### Specular lighting
+### Imperfect specular lighting
 
 In path tracing, like diffuse materials, specular materials are
 simulated using a probability distribution instead computing the
@@ -177,6 +178,8 @@ there is a typographical error: χ in the text = ξ in the formulas.)
 
 Also see the notes in `scatterRay` for probability splits between
 diffuse/specular/other material types.
+
+See also: PBRT 8.2.2.
 
 ### Handling Long-Running CUDA Threads
 
@@ -304,3 +307,7 @@ list of `SOURCE_FILES`), you must test that your project can build in Moore
    * If there were any outstanding problems, or if you did any extra
      work, *briefly* explain.
    * Feedback on the project itself, if any.
+
+## References
+
+* [PBRT] Physically Based Rendering, Second Edition: From Theory To Implementation. Pharr, Matt and Humphreys, Greg. 2010.
