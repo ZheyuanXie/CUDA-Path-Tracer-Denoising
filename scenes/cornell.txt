@@ -12,7 +12,7 @@ EMITTANCE   5
 MATERIAL 1
 RGB         .98 .98 .98
 SPECEX      0
-SPECRGB     1 1 1
+SPECRGB     0 0 0
 REFL        0
 REFR        0
 REFRIOR     0
@@ -22,7 +22,7 @@ EMITTANCE   0
 MATERIAL 2
 RGB         .85 .35 .35
 SPECEX      0
-SPECRGB     1 1 1
+SPECRGB     0 0 0
 REFL        0
 REFR        0
 REFRIOR     0
@@ -32,8 +32,18 @@ EMITTANCE   0
 MATERIAL 3
 RGB         .35 .85 .35
 SPECEX      0
-SPECRGB     1 1 1
+SPECRGB     0 0 0
 REFL        0
+REFR        0
+REFRIOR     0
+EMITTANCE   0
+
+// Specular white
+MATERIAL 4
+RGB         .98 .98 .98
+SPECEX      0
+SPECRGB     .98 .98 .98
+REFL        1
 REFR        0
 REFRIOR     0
 EMITTANCE   0
@@ -101,7 +111,7 @@ SCALE       .01 10 10
 // Sphere
 OBJECT 6
 sphere
-material 1
+material 4
 TRANS       -1 4 -1
 ROTAT       0 0 0
 SCALE       3 3 3
