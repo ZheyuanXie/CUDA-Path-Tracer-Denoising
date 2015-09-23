@@ -85,10 +85,10 @@ You will need to implement the following features:
   multiple blocks. (See
   [*GPU Gems 3*, Chapter 39](http://http.developer.nvidia.com/GPUGems3/gpugems3_ch39.html).)
 
-You are also required to implement at least 2 of the following features. Please
-ask if you need good references. If you find good references, share them!
+You are also required to implement at least 2 of the following features.
+If you find other good references for these features, share them!
 **Extra credit**: implement more features on top of the 2 required ones,
-with point value up to +20/100 atthe grader's discretion
+with point value up to +20/100 at the grader's discretion
 (based on difficulty and coolness).
 
 * **NOW REQUIRED - NOT AN EXTRA:** ~~Work-efficient stream compaction (see above).~~
