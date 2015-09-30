@@ -78,7 +78,7 @@ You will need to implement the following features:
   (the screen).
   * Implement simple antialiasing (by jittering rays within each pixel).
 * Diffuse surfaces (using provided cosine-weighted scatter function) [PBRT 8.3].
-* Perfectly specular-reflective (mirrored) surfaces.
+* Perfectly specular-reflective (mirrored) surfaces (e.g. using `glm::reflect`).
   * See notes on diffuse/specular in `scatterRay` and on imperfect specular below.
 * Stream compaction optimization, using:
 * **NEWLY ADDED:** Work-efficient stream compaction using shared memory across
@@ -95,10 +95,12 @@ with point value up to +20/100 at the grader's discretion
 * These 2 smaller features:
   * Refraction (e.g. glass/water) [PBRT 8.2] with Frensel effects using
     [Schlick's approximation](https://en.wikipedia.org/wiki/Schlick's_approximation)
-    or more accurate methods [PBRT 8.5].
+    or more accurate methods [PBRT 8.5]. You can use `glm::refract` for
+    Snell's law.
   * Physically-based depth-of-field (by jittering rays within an aperture)
     [PBRT 6.2.3].
   * Recommended but not required: non-perfect specular surfaces. (See below.)
+    (**INSTRUCTOR TODO**: require in the future?)
 * Texture mapping [PBRT 10.4].
 * Bump mapping [PBRT 9.3].
 * Direct lighting (by taking a final ray directly to a random point on an
