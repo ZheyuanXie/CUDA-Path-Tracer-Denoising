@@ -222,9 +222,7 @@ Cameras are defined in the following fashion:
 * CAMERA //camera header
 * RES (float x) (float y) //resolution
 * FOVY (float fovy) //vertical field of view half-angle. the horizonal angle is calculated from this and the reslution
-* ITERATIONS (float interations) //how many iterations to refine the image,
-  only relevant for supersampled antialiasing, depth of field, area lights, and
-  other distributed raytracing applications
+* ITERATIONS (float interations) //how many iterations to refine the image
 * DEPTH (int depth) //maximum depth (number of times the path will bounce)
 * FILE (string filename) //file to output render to upon completion
 * EYE (float x) (float y) (float z) //camera's position in worldspace
