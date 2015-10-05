@@ -102,7 +102,8 @@ with point value up to +20/100 at the grader's discretion
   * Recommended but not required: non-perfect specular surfaces. (See below.)
     (**INSTRUCTOR TODO**: require in the future?)
 * Texture mapping [PBRT 10.4].
-* Bump mapping [PBRT 9.3].
+* Bump mapping [PBRT 9.3]. (**INSTRUCTOR TODO:** combine with texture mapping,
+  and possibly add displacement mapping.)
 * Direct lighting (by taking a final ray directly to a random point on an
   emissive object acting as a light source). Or more advanced [PBRT 15.1.1].
 * Some method of defining object motion, and motion blur by averaging samples
