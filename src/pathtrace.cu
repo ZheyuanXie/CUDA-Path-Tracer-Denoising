@@ -69,7 +69,10 @@ __global__ void sendImageToPBO(uchar4* pbo, glm::ivec2 resolution,
 
 static Scene *hst_scene = NULL;
 static glm::vec3 *dev_image = NULL;
-// TODO: static variables for device memory, scene/camera info, etc
+static Geom * dev_geom;
+static Material * dev_material;
+static Path * dev_path;
+// TODO: static variables for device memory, any extra info you need, etc
 // ...
 
 void pathtraceInit(Scene *scene) {
@@ -79,14 +82,25 @@ void pathtraceInit(Scene *scene) {
 
     cudaMalloc(&dev_image, pixelcount * sizeof(glm::vec3));
     cudaMemset(dev_image, 0, pixelcount * sizeof(glm::vec3));
-    // TODO: initialize the above static variables added above
+
+	cudaMalloc(&dev_path, pixelcount * sizeof(Path));
+
+	cudaMalloc(&dev_geom, scene->geoms.size() * sizeof(Geom));
+	cudaMemcpy(dev_geom, scene->geoms.data(), scene->geoms.size() * sizeof(Geom), cudaMemcpyHostToDevice);
+
+	cudaMalloc(&dev_material, scene->materials.size() * sizeof(Material));
+	cudaMemcpy(dev_material, scene->materials.data(), scene->materials.size() * sizeof(Material), cudaMemcpyHostToDevice);
+    // TODO: initialize any extra device memeory you need
 
     checkCUDAError("pathtraceInit");
 }
 
 void pathtraceFree() {
     cudaFree(dev_image);  // no-op if dev_image is null
-    // TODO: clean up the above static variables
+	cudaFree(dev_path);
+	cudaFree(dev_geom);
+	cudaFree(dev_material);
+    // TODO: clean up any extra device memory you created
 
     checkCUDAError("pathtraceFree");
 }
@@ -117,6 +131,137 @@ __global__ void generateNoiseDeleteMe(Camera cam, int iter, glm::vec3 *image) {
 }
 
 /**
+* Generate Rays from camera through screen to the field
+* which is the first generation of rays
+*
+* Antialiasing - num of rays per pixel
+* motion blur - jitter scene position
+* lens effect - jitter camera position
+*/
+__global__ void generateRayFromCamera(Camera cam, int iter, Path* paths)
+{
+	int x = (blockIdx.x * blockDim.x) + threadIdx.x;
+	int y = (blockIdx.y * blockDim.y) + threadIdx.y;
+
+	if (x < cam.resolution.x && y < cam.resolution.y) {
+		int index = x + (y * cam.resolution.x);
+		Path & path = paths[index];
+		//getCameraRayAtPixel(path, cam, x, y, iter, index);
+		thrust::default_random_engine rng = makeSeededRandomEngine(iter, index, 0);
+		thrust::uniform_real_distribution<float> u01(0, 1);
+
+		path.ray.origin = cam.position;
+
+		path.ray.direction = glm::normalize(cam.view
+			- cam.right * cam.pixelLength.x * ((float)x - (float)cam.resolution.x * 0.5f + u01(rng))  	//u01(rng) is for jiitering for antialiasing
+			- cam.up * cam.pixelLength.y * ((float)y - (float)cam.resolution.y * 0.5f + u01(rng)) 		//u01(rng) is for jiitering for antialiasing
+			);
+
+		path.pixelIndex = index;
+		path.color = glm::vec3(1.0f);
+		path.terminated = false;
+	}
+}
+
+
+
+
+
+
+__global__ void pathTraceOneBounce(int depth, int num_paths, glm::vec3 * image
+	, Path * paths
+	, Geom * geoms, int geoms_size
+	, Material * materials, int materials_size
+	)
+{
+	//int blockId = blockIdx.x + blockIdx.y * gridDim.x;
+	//int path_index = blockId * (blockDim.x * blockDim.y) + (threadIdx.y * blockDim.x) + threadIdx.x;
+	//int path_index = blockIdx.x * blockDim.x * blockDim.y + threadIdx.y * blockDim.x + threadIdx.x;
+	int path_index = blockIdx.x * blockDim.x + threadIdx.x;
+
+	if (path_index < num_paths)
+	{
+		Path & path = paths[path_index];	//TODO: reconsider the speed for the memory access here
+
+		//calculate intersection
+		float t;
+		glm::vec3 intersect_point;
+		glm::vec3 normal;
+		float t_min = FLT_MAX;
+		int hit_geom_index = -1;
+		bool outside = true;
+
+		//naive parse through global geoms
+
+		for (int i = 0; i < geoms_size; i++)
+		{
+			//Geom & geom = static_cast<Geom>(*it);
+			glm::vec3 tmp_intersect;
+			glm::vec3 tmp_normal;
+			Geom & geom = geoms[i];
+
+			if (geom.type == CUBE)
+			{
+				t = boxIntersectionTest(geom, path.ray, tmp_intersect, tmp_normal, outside);
+			}
+			else if (geom.type == SPHERE)
+			{
+				t = sphereIntersectionTest(geom, path.ray, tmp_intersect, tmp_normal, outside);
+			}
+			// TODO: add more primitive types intersection test here
+
+			if (t > 0 && t_min > t)
+			{
+				t_min = t;
+				hit_geom_index = i;
+				intersect_point = tmp_intersect;
+				normal = tmp_normal;
+			}
+		}
+
+
+		///////////////////////////////
+
+
+		if (hit_geom_index == -1)
+		{
+			path.terminated = true;
+			//image[path.pixelIndex] += BACKGROUND_COLOR;
+		}
+		else
+		{
+			//hit something
+			Geom & geom = geoms[hit_geom_index];
+			Material & material = materials[geom.materialid];
+
+			// TODO: Delete me
+			// This is a test implementation, color the pixel with the hitting material value
+
+			// TODO: call scatterRay
+			// scatterRay(path.ray, path.color, intersect_point, normal, material, rng);
+
+			image[path.pixelIndex] += material.color;
+
+		}
+
+
+
+	}
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+/**
  * Wrapper for the __global__ call that sets up the kernel calls and does a ton
  * of memory management
  */
@@ -125,10 +270,15 @@ void pathtrace(uchar4 *pbo, int frame, int iter) {
     const Camera &cam = hst_scene->state.camera;
     const int pixelcount = cam.resolution.x * cam.resolution.y;
 
+	// 2D block for generating ray from camera
     const dim3 blockSize2d(8, 8);
     const dim3 blocksPerGrid2d(
             (cam.resolution.x + blockSize2d.x - 1) / blockSize2d.x,
             (cam.resolution.y + blockSize2d.y - 1) / blockSize2d.y);
+
+	// 1D block for path tracing
+	const int blockSize1d = 128;
+	const dim3 blockSize(blockSize1d);
 
     ///////////////////////////////////////////////////////////////////////////
 
@@ -159,7 +309,28 @@ void pathtrace(uchar4 *pbo, int frame, int iter) {
 
     // TODO: perform one iteration of path tracing
 
-    generateNoiseDeleteMe<<<blocksPerGrid2d, blockSize2d>>>(cam, iter, dev_image);
+    //generateNoiseDeleteMe<<<blocksPerGrid2d, blockSize2d>>>(cam, iter, dev_image);
+
+	generateRayFromCamera << <blocksPerGrid2d, blockSize2d >> >(cam, iter, dev_path);
+	checkCUDAError("generate camera ray");
+
+	int depth = 0;
+	Path* dev_path_end = dev_path + pixelcount;
+	int num_path = dev_path_end - dev_path;
+
+	// TODO: iterate your path tracing process
+
+	dim3 blocksNeeded = (num_path + blockSize1d - 1) / blockSize1d;
+	pathTraceOneBounce << <blocksNeeded, blockSize1d >> >(depth, num_path, dev_image, dev_path
+		, dev_geom, hst_scene->geoms.size()
+		, dev_material, hst_scene->materials.size());
+	checkCUDAError("trace one bounce");
+	cudaDeviceSynchronize();
+	depth++;
+
+
+
+
 
     ///////////////////////////////////////////////////////////////////////////
 

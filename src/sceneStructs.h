@@ -5,6 +5,8 @@
 #include <cuda_runtime.h>
 #include "glm/glm.hpp"
 
+#define BACKGROUND_COLOR (glm::vec3(0.0f))
+
 enum GeomType {
     SPHERE,
     CUBE,
@@ -43,7 +45,9 @@ struct Camera {
     glm::vec3 position;
     glm::vec3 view;
     glm::vec3 up;
+	glm::vec3 right;
     glm::vec2 fov;
+	glm::vec2 pixelLength;
 };
 
 struct RenderState {
@@ -52,4 +56,11 @@ struct RenderState {
     int traceDepth;
     std::vector<glm::vec3> image;
     std::string imageName;
+};
+
+struct Path {
+	Ray ray;
+	glm::vec3 color;
+	int pixelIndex;
+	bool terminated;
 };
