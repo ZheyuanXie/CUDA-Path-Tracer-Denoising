@@ -146,15 +146,16 @@ __global__ void generateRayFromCamera(Camera cam, int iter, Path* paths)
 	if (x < cam.resolution.x && y < cam.resolution.y) {
 		int index = x + (y * cam.resolution.x);
 		Path & path = paths[index];
-		//getCameraRayAtPixel(path, cam, x, y, iter, index);
+
 		thrust::default_random_engine rng = makeSeededRandomEngine(iter, index, 0);
 		thrust::uniform_real_distribution<float> u01(0, 1);
 
 		path.ray.origin = cam.position;
 
+		// TODO: implement antialiasing by jittering the ray
 		path.ray.direction = glm::normalize(cam.view
-			- cam.right * cam.pixelLength.x * ((float)x - (float)cam.resolution.x * 0.5f + u01(rng))  	//u01(rng) is for jiitering for antialiasing
-			- cam.up * cam.pixelLength.y * ((float)y - (float)cam.resolution.y * 0.5f + u01(rng)) 		//u01(rng) is for jiitering for antialiasing
+			- cam.right * cam.pixelLength.x * ((float)x - (float)cam.resolution.x * 0.5f)
+			- cam.up * cam.pixelLength.y * ((float)y - (float)cam.resolution.y * 0.5f)
 			);
 
 		path.pixelIndex = index;
@@ -165,25 +166,18 @@ __global__ void generateRayFromCamera(Camera cam, int iter, Path* paths)
 
 
 
-
-
-
 __global__ void pathTraceOneBounce(int depth, int num_paths, glm::vec3 * image
 	, Path * paths
 	, Geom * geoms, int geoms_size
 	, Material * materials, int materials_size
 	)
 {
-	//int blockId = blockIdx.x + blockIdx.y * gridDim.x;
-	//int path_index = blockId * (blockDim.x * blockDim.y) + (threadIdx.y * blockDim.x) + threadIdx.x;
-	//int path_index = blockIdx.x * blockDim.x * blockDim.y + threadIdx.y * blockDim.x + threadIdx.x;
 	int path_index = blockIdx.x * blockDim.x + threadIdx.x;
 
 	if (path_index < num_paths)
 	{
-		Path & path = paths[path_index];	//TODO: reconsider the speed for the memory access here
+		Path & path = paths[path_index];
 
-		//calculate intersection
 		float t;
 		glm::vec3 intersect_point;
 		glm::vec3 normal;
@@ -191,13 +185,13 @@ __global__ void pathTraceOneBounce(int depth, int num_paths, glm::vec3 * image
 		int hit_geom_index = -1;
 		bool outside = true;
 
-		//naive parse through global geoms
+		glm::vec3 tmp_intersect;
+		glm::vec3 tmp_normal;
+
+		// naive parse through global geoms
 
 		for (int i = 0; i < geoms_size; i++)
 		{
-			//Geom & geom = static_cast<Geom>(*it);
-			glm::vec3 tmp_intersect;
-			glm::vec3 tmp_normal;
 			Geom & geom = geoms[i];
 
 			if (geom.type == CUBE)
@@ -210,7 +204,7 @@ __global__ void pathTraceOneBounce(int depth, int num_paths, glm::vec3 * image
 			}
 			// TODO: add more primitive types intersection test here
 
-			if (t > 0 && t_min > t)
+			if (t > 0.0f && t_min > t)
 			{
 				t_min = t;
 				hit_geom_index = i;
@@ -225,39 +219,25 @@ __global__ void pathTraceOneBounce(int depth, int num_paths, glm::vec3 * image
 
 		if (hit_geom_index == -1)
 		{
+			// The ray hits nothing
 			path.terminated = true;
-			//image[path.pixelIndex] += BACKGROUND_COLOR;
 		}
 		else
 		{
-			//hit something
+			//The ray hits something 
 			Geom & geom = geoms[hit_geom_index];
 			Material & material = materials[geom.materialid];
 
 			// TODO: Delete me
 			// This is a test implementation, color the pixel with the hitting material value
+			image[path.pixelIndex] += material.color;
 
 			// TODO: call scatterRay
 			// scatterRay(path.ray, path.color, intersect_point, normal, material, rng);
-
-			image[path.pixelIndex] += material.color;
-
 		}
-
-
 
 	}
 }
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -327,9 +307,6 @@ void pathtrace(uchar4 *pbo, int frame, int iter) {
 	checkCUDAError("trace one bounce");
 	cudaDeviceSynchronize();
 	depth++;
-
-
-
 
 
     ///////////////////////////////////////////////////////////////////////////
