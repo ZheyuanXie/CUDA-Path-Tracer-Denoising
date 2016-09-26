@@ -221,16 +221,16 @@ __global__ void pathTraceOneBounce(
 		{
 			// The ray hits nothing, no need to shade the pixel that this ray contributes to
 			path.terminated = true;
-			
+
 			// Set the 100% ray color of this pixel to 0x000000
 			lightColor[path.pixelIndex] = glm::vec3(0.0);
 		}
 		else
 		{
-			//The ray hits something 
+			//The ray hits something
 			Geom & geom = geoms[hit_geom_index];
 			Material & material = materials[geom.materialid];
-			
+
 			if (material.emittance > EPSILON)
 			{
 				// we hit a light source
@@ -248,10 +248,10 @@ __global__ void pathTraceOneBounce(
 			{
 				// we hit a surface (not a light)
 				path.terminated = false;
-				
+
 				// TODO: push a ShadingChunk to its list based on the material
 				// which will be used in the shading stage
-				
+
 				// TODO: delete me, test only
 				diffuse[path_index].activated = true;
 				diffuse[path_index].materialId = geom.materialid;
@@ -295,7 +295,7 @@ __global__ void shadeDiffusePhongMaterial (
 	}
 }
 
-__global__ void shadeDiffusePhongMaterial(
+__global__ void shadeSpecularPhongMaterial(
 	int num_chunks
 	, SpecularPhongShadingChunk * specular_chunk
 	, glm::vec3 * lightColor
@@ -386,7 +386,7 @@ void pathtrace(uchar4 *pbo, int frame, int iter) {
 
 	// --- Path Tracing Stage ---
 	// Shoot ray into scene, bounce between objects, push shading chunks
-	
+
 	// TODO: write a loop to iterate your path tracing process
 	// while (...) {
 
@@ -422,11 +422,11 @@ void pathtrace(uchar4 *pbo, int frame, int iter) {
 		, dev_material);
 
 
-	
-	//}		// brackets of while loop  
+
+	//}		// brackets of while loop
 
 
-	
+
 	finalGather << <blocksPerGrid2d, blockSize2d >> >(cam.resolution.x, cam.resolution.y, dev_image, dev_lightColor);
 
 
