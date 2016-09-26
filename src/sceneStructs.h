@@ -64,3 +64,23 @@ struct Path {
 	int pixelIndex;
 	bool terminated;
 };
+
+
+enum MaterialShadingTechnique {
+	PHONG_DIFFUSE,
+	PHONG_SPECULAR
+};
+
+struct DiffusePhongShadingChunk {
+	bool activated;
+	int materialId;
+	int pixelId;
+};
+
+struct SpecularPhongShadingChunk {
+	bool activated;
+	int materialId;
+	int pixelId;
+	glm::vec3 rayDirection;
+	glm::vec3 normal;
+};
