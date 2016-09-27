@@ -146,6 +146,8 @@ bool init() {
     }
     glfwMakeContextCurrent(window);
     glfwSetKeyCallback(window, keyCallback);
+    glfwSetCursorPosCallback(window, mousePositionCallback);
+    glfwSetMouseButtonCallback(window, mouseButtonCallback);
 
     // Set up GL context
     glewExperimental = GL_TRUE;
