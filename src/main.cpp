@@ -3,9 +3,21 @@
 #include <cstring>
 
 static std::string startTimeString;
-static bool camchanged = false;
-static float theta = 0, phi = 0;
+
+// For camera controls
+static bool leftMousePressed = false;
+static bool rightMousePressed = false;
+static bool middleMousePressed = false;
+static double lastX;
+static double lastY;
+
+static bool camchanged = true;
+static float dtheta = 0, dphi = 0;
 static glm::vec3 cammove;
+
+float zoom, theta, phi;
+glm::vec3 cameraPosition;
+glm::vec3 ogLookAt; // for recentering the camera
 
 Scene *scene;
 RenderState *renderState;
@@ -34,8 +46,25 @@ int main(int argc, char** argv) {
     // Set up camera stuff from loaded path tracer settings
     iteration = 0;
     renderState = &scene->state;
-    width = renderState->camera.resolution.x;
-    height = renderState->camera.resolution.y;
+    Camera &cam = renderState->camera;
+    width = cam.resolution.x;
+    height = cam.resolution.y;
+
+    glm::vec3 view = cam.view;
+    glm::vec3 up = cam.up;
+    glm::vec3 right = glm::cross(view, up);
+    up = glm::cross(right, view);
+
+    cameraPosition = cam.position;
+
+    // compute phi (horizontal) and theta (vertical) relative 3D axis
+    // so, (0 0 1) is forward, (0 1 0) is up
+    glm::vec3 viewXZ = glm::vec3(view.x, 0.0f, view.z);
+    glm::vec3 viewZY = glm::vec3(0.0f, view.y, view.z);
+    phi = glm::acos(glm::dot(glm::normalize(viewXZ), glm::vec3(0, 0, -1)));
+    theta = glm::acos(glm::dot(glm::normalize(viewZY), glm::vec3(0, 1, 0)));
+    ogLookAt = cam.lookAt;
+    zoom = glm::length(cam.position - ogLookAt);
 
     // Initialize CUDA and GL components
     init();
@@ -73,17 +102,22 @@ void runCuda() {
     if (camchanged) {
         iteration = 0;
         Camera &cam = renderState->camera;
+        cameraPosition.x = zoom * sin(phi) * sin(theta);
+        cameraPosition.y = zoom * cos(theta);
+        cameraPosition.z = zoom * cos(phi) * sin(theta);
+
+        cam.view = -glm::normalize(cameraPosition);
         glm::vec3 v = cam.view;
-        glm::vec3 u = cam.up;
+        glm::vec3 u = glm::vec3(0, 1, 0);//glm::normalize(cam.up);
         glm::vec3 r = glm::cross(v, u);
-        glm::mat4 rotmat = glm::rotate(theta, r) * glm::rotate(phi, u);
-        cam.view = glm::vec3(rotmat * glm::vec4(v, 0.f));
-        cam.up = glm::vec3(rotmat * glm::vec4(u, 0.f));
-        cam.position += cammove.x * r + cammove.y * u + cammove.z * v;
-        theta = phi = 0;
-        cammove = glm::vec3();
+        cam.up = glm::cross(r, v);
+        cam.right = r;
+
+        cam.position = cameraPosition;
+        cameraPosition += cam.lookAt;
+        cam.position = cameraPosition;
         camchanged = false;
-    }
+      }
 
     // Map OpenGL buffer object for writing from CUDA on a single GPU
     // No data is moved (Win & Linux). When mapped to CUDA, OpenGL should not use this buffer
@@ -114,24 +148,48 @@ void runCuda() {
 
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
     if (action == GLFW_PRESS) {
-        switch (key) {
-        case GLFW_KEY_ESCAPE:
-            saveImage();
-            glfwSetWindowShouldClose(window, GL_TRUE);
-            break;
-        case GLFW_KEY_SPACE:
-            saveImage();
-            break;
-        case GLFW_KEY_DOWN:  camchanged = true; theta = -0.1f; break;
-        case GLFW_KEY_UP:    camchanged = true; theta = +0.1f; break;
-        case GLFW_KEY_RIGHT: camchanged = true; phi = -0.1f; break;
-        case GLFW_KEY_LEFT:  camchanged = true; phi = +0.1f; break;
-        case GLFW_KEY_A:     camchanged = true; cammove -= glm::vec3(.1f, 0, 0); break;
-        case GLFW_KEY_D:     camchanged = true; cammove += glm::vec3(.1f, 0, 0); break;
-        case GLFW_KEY_W:     camchanged = true; cammove += glm::vec3(0, 0, .1f); break;
-        case GLFW_KEY_S:     camchanged = true; cammove -= glm::vec3(0, 0, .1f); break;
-        case GLFW_KEY_R:     camchanged = true; cammove += glm::vec3(0, .1f, 0); break;
-        case GLFW_KEY_F:     camchanged = true; cammove -= glm::vec3(0, .1f, 0); break;
-        }
+      if (key == GLFW_KEY_SPACE) {
+        camchanged = true;
+        renderState = &scene->state;
+        Camera &cam = renderState->camera;
+        cam.lookAt = ogLookAt;
+      }
     }
+}
+
+void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
+  leftMousePressed = (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS);
+  rightMousePressed = (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS);
+  middleMousePressed = (button == GLFW_MOUSE_BUTTON_MIDDLE && action == GLFW_PRESS);
+}
+
+void mousePositionCallback(GLFWwindow* window, double xpos, double ypos) {
+  if (leftMousePressed) {
+    // compute new camera parameters
+    phi -= (xpos - lastX) / width;
+    theta -= (ypos - lastY) / height;
+    theta = std::fmax(0.001f, std::fmin(theta, PI));
+    camchanged = true;
+  }
+  else if (rightMousePressed) {
+    zoom += (ypos - lastY) / height;
+    zoom = std::fmax(0.1f, zoom);
+    camchanged = true;
+  }
+  else if (middleMousePressed) {
+    renderState = &scene->state;
+    Camera &cam = renderState->camera;
+    glm::vec3 forward = cam.view;
+    forward.y = 0.0f;
+    forward = glm::normalize(forward);
+    glm::vec3 right = cam.right;
+    right.y = 0.0f;
+    right = glm::normalize(right);
+
+    cam.lookAt -= (float) (xpos - lastX) * right * 0.01f;
+    cam.lookAt += (float) (ypos - lastY) * forward * 0.01f;
+    camchanged = true;
+  }
+  lastX = xpos;
+  lastY = ypos;
 }
