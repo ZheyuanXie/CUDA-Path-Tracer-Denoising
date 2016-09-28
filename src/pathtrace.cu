@@ -229,21 +229,29 @@ __global__ void shadeFakeMaterial (
   if (idx < num_paths)
   {
     ShadeableIntersection intersection = shadeableIntersections[idx];
-    if (intersection.t > 0.0f) {
-
+    if (intersection.t > 0.0f) { // if the intersection exists...
+      // Set up the RNG
       thrust::default_random_engine rng = makeSeededRandomEngine(iter, idx, 0);
       thrust::uniform_real_distribution<float> u01(0, 1);
 
       Material material = materials[intersection.materialId];
       glm::vec3 materialColor = material.color;
+
+      // If the material indicates that the object was a light, "light" the ray
       if (material.emittance > 0.0f) {
         pathSegments[idx].color *= (materialColor * material.emittance);
       }
+      // Otherwise, do some pseudo-lighting computation. This is actually more
+      // like what you would expect from shading in a rasterizer like OpenGL.
       else {
         float lightTerm = glm::dot(intersection.surfaceNormal, glm::vec3(0.0f, 1.0f, 0.0f));
         pathSegments[idx].color *= (materialColor * lightTerm) * 0.3f + ((1.0f - intersection.t * 0.02f) * materialColor) * 0.7f;
-        pathSegments[idx].color *= u01(rng);
+        pathSegments[idx].color *= u01(rng); // apply some noise because why not
       }
+    // If there was no intersection, color the ray black.
+    // Lots of renderers use 4 channel color, RGBA, where A = alpha, often
+    // used for opacity, in which case they can indicate "no opacity".
+    // This can be useful for post-processing and image compositing.
     } else {
       pathSegments[idx].color = glm::vec3(0.0f);
     }
@@ -321,8 +329,8 @@ void pathtrace(uchar4 *pbo, int frame, int iter) {
 	// --- PathSegment Tracing Stage ---
 	// Shoot ray into scene, bounce between objects, push shading chunks
 
-	// TODO: write a loop to iterate your path tracing process
-	// while (...) {
+  bool iterationComplete = false;
+	while (!iterationComplete) {
 
 	// clean shading chunks
 	cudaMemset(dev_intersections, 0, pixelcount * sizeof(ShadeableIntersection));
@@ -344,7 +352,12 @@ void pathtrace(uchar4 *pbo, int frame, int iter) {
 
 	// TODO:
 	// --- Shading Stage ---
-	// Given the shading chunks (one for each material)
+	// Shade path segments based on intersections and generate new rays by
+  // evaluating the BSDF.
+  // Start off with just a big kernel that handles all the different
+  // materials you have in the scenefile.
+  // TODO: compare between directly shading the path segments and shading
+  // path segments that have been reshuffled to be contiguous in memory.
 
   shadeFakeMaterial<<<numblocksPathSegmentTracing, blockSize1d>>> (
     iter,
@@ -353,13 +366,12 @@ void pathtrace(uchar4 *pbo, int frame, int iter) {
     dev_paths,
     dev_materials
   );
+  iterationComplete = true; // TODO: should be based off stream compaction results.
+	}
 
-	//}		// brackets of while loop
-
-
-
-	finalGather<<<numblocksPathSegmentTracing, blockSize1d>>>(num_paths, dev_image, dev_paths);
-
+  // Assemble this iteration and apply it to the image
+  dim3 numBlocksPixels = (pixelcount + blockSize1d - 1) / blockSize1d;
+	finalGather<<<numBlocksPixels, blockSize1d>>>(num_paths, dev_image, dev_paths);
 
     ///////////////////////////////////////////////////////////////////////////
 
