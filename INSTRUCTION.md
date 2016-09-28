@@ -20,7 +20,7 @@ part of the base code as you please. **This is YOUR project.**
 **Recommendation:** Every image you save should automatically get a different
 filename. Don't delete all of them! For the benefit of your README, keep a
 bunch of them around so you can pick a few to document your progress at the
-end.
+end. Outtakes are highly appreciated!
 
 ### Contents
 
@@ -44,12 +44,15 @@ read the console for errors.
 #### Controls
 
 * Esc to save an image and exit.
-* Space to save an image. Watch the console for the output filename.
-* W/A/S/D and R/F move the camera. Arrow keys rotate.
+* S to save an image. Watch the console for the output filename.
+* Space to re-center the camera at the original scene lookAt point
+* left mouse button to rotate the camera
+* right mouse button on the vertical axis to zoom in/out
+* middle mouse button to move the LOOKAT point in the scene's X/Z plane
 
 ## Requirements
 
-**Ask on the mailing list for clarifications.**
+**Ask in the google group for clarifications.**
 
 In this project, you are given code for:
 
@@ -57,28 +60,45 @@ In this project, you are given code for:
 * Sphere and box intersection functions
 * Support for saving images
 * Working CUDA-GL interop for previewing your render while it's running
-* A function which generates random screen noise (instead of an actual render).
+* A skeleton renderer with:
+  * Naive ray-scene intersection
+  * A "fake" shading kernel that colors rays based on the material and intersection properties
+  but does NOT compute a new ray based on the BSDF
+
+##### Part 1 - Core Features
 
 You will need to implement the following features:
-
-* Raycasting from the camera into the scene through an imaginary grid of pixels
-  (the screen).
-  * Implement simple antialiasing (by jittering rays within each pixel).
-* Diffuse surfaces (using provided cosine-weighted scatter function) [PBRT 8.3].
-* Perfectly specular-reflective (mirrored) surfaces (e.g. using `glm::reflect`).
+* A shading kernel with BSDF evaluation for:
+  * Ideal Diffuse surfaces (using provided cosine-weighted scatter function, see below.) [PBRT 8.3].
+  * Perfectly specular-reflective (mirrored) surfaces (e.g. using `glm::reflect`).
   * See notes on diffuse/specular in `scatterRay` and on imperfect specular below.
-* Stream compaction optimization, using:
-* **NEWLY ADDED:** Work-efficient stream compaction using shared memory across
-  multiple blocks. (See
-  [*GPU Gems 3*, Chapter 39](http://http.developer.nvidia.com/GPUGems3/gpugems3_ch39.html).)
+* Path continuation/termination using Stream Compaction
+* After you have a [basic pathtracer up and running](img/REFERENCE_cornell.5000samp.png),
+implement a means of making rays/pathSegments/intersections contiguous in memory
+by material type. This should be easily toggleable.
+  * Consider the problems with coloring every path segment in a buffer and performing
+  BSDF evaluation using one big shading kernel:
+  different materials/BSDF evaluations within the kernel will take different
+  amounts of time to complete.
+  * Sort the rays/path segments so that rays/paths interacting with the same material
+  are contiguous in memory before shading. How does this impact performance? Why?
+* A toggleable option to cache the first bounce intersections for re-use across all
+subsequent iterations. Provide performance benefit analysis across different
+max ray depths.
 
-You are also required to implement at least 2 of the following features.
+##### Part 2 - Make Your Pathtracer Unique!
+
+You are required to choose and implement at least 2 of the following features.
 If you find other good references for these features, share them!
 **Extra credit**: implement more features on top of the 2 required ones,
 with point value up to +20/100 at the grader's discretion
 (based on difficulty and coolness).
 
-* **NOW REQUIRED - NOT AN EXTRA:** ~~Work-efficient stream compaction (see above).~~
+* Work-efficient stream compaction using shared memory across
+  multiple blocks. (See
+  [*GPU Gems 3*, Chapter 39](http://http.developer.nvidia.com/GPUGems3/gpugems3_ch39.html).)
+  Note that this is not an option if you implemented shared memory stream
+  compaction as extra credit for Project 2.
 * These 2 smaller features:
   * Refraction (e.g. glass/water) [PBRT 8.2] with Frensel effects using
     [Schlick's approximation](https://en.wikipedia.org/wiki/Schlick's_approximation)
@@ -87,20 +107,37 @@ with point value up to +20/100 at the grader's discretion
   * Physically-based depth-of-field (by jittering rays within an aperture)
     [PBRT 6.2.3].
   * Recommended but not required: non-perfect specular surfaces. (See below.)
-    (**INSTRUCTOR TODO**: require in the future?)
-* Texture mapping [PBRT 10.4].
-* Bump mapping [PBRT 9.3]. (**INSTRUCTOR TODO:** combine with texture mapping,
-  and possibly add displacement mapping.)
+* Texture mapping [PBRT 10.4] and Bump mapping [PBRT 9.3].
+  * Implement file-loaded textures AND a basic procedural texture
+  * Provide a performance comparison between the two
 * Direct lighting (by taking a final ray directly to a random point on an
   emissive object acting as a light source). Or more advanced [PBRT 15.1.1].
 * Some method of defining object motion, and motion blur by averaging samples
   at different times in the animation.
 * Subsurface scattering [PBRT 5.6.2, 11.6].
-* Arbitrary mesh loading and rendering (e.g. `obj` files). You can find these
-  online or export them from your favorite 3D modeling application.
-  With approval, you may use a third-party OBJ loading code to bring the data
-  into C++.
+* Arbitrary mesh loading and rendering (e.g. `gltf` files or `obj` files) with
+toggleable bounding volume intersection culling
+  * You can find models online or export them from your favorite 3D modeling application.
+  With approval, you may use a third-party loading code to bring the data
+  into C++. [tinyGltf](https://github.com/syoyo/tinygltfloader) and
+  [tinyObj](http://syoyo.github.io/tinyobjloader/) are both highly recommended.
   * You can use the triangle intersection function `glm::intersectRayTriangle`.
+  * bounding volume intersection culling: reduce the number of rays that have to
+  be checked against the entire mesh by first checking rays against a volume
+  that completely bounds the mesh. For full credit, provide performance analysis
+  with and without this optimization.
+* Hierarchical spatial datastructures - for better ray/scene intersection testing
+  * Octree recommended - this feature is more about traversal on the GPU than perfect tree structure
+  * CPU-side datastructure construction is sufficient - GPU-side construction was
+  a [final project.](https://github.com/jeremynewlin/Accel)
+  * Make sure this is toggleable for performance comparisons
+  * If implemented in conjunction with Arbitrary mesh loading, this qualifies as the
+toggleable bounding volume intersection culling.
+  * See below for more resources
+* [Waverfont pathtracing](https://research.nvidia.com/publication/megakernels-considered-harmful-wavefront-path-tracing-gpus):
+Group rays by material without a  sorting pass. A sane implementation will
+require considerable refactoring, since every supported material suddenly needs
+its own kernel.
 
 This 'extra features' list is not comprehensive. If you have a particular idea
 you would like to implement (e.g. acceleration structures, etc.), please
@@ -171,6 +208,30 @@ diffuse/specular/other material types.
 
 See also: PBRT 8.2.2.
 
+### Hierarchical spatial datastructures
+
+One method for avoiding checking a ray against every primitive in the scene or
+every triangle in a mesh is to bin the primitives in a hierarchical spatial
+datastructure such as an [octree](https://en.wikipedia.org/wiki/Octree).
+Ray-primitive intersection then involves recursively testing the ray against
+bounding volumes at different levels in the tree until a leaf containing a
+subset of primitives/triangles is reached, at which point the ray is checked
+against all the primitives/triangles in the leaf.
+
+* We highly recommend building the datastructure on the CPU and encapsulating
+the tree buffers into their own struct, with its own dedicated GPU memory
+management functions.
+* We highly recommend working through your tree construction algorithm by hand
+with a couple cases before writing any actual code.
+  * How does the algorithm distribute triangles uniformly distributed in space?
+  * What if the model is a perfect axis-aligned cube with 12 triangles in 6 faces?
+  This test can often bring up numerous edge cases!
+* Note that traversal on the GPU must be coded iteratively!
+* Good execution on the GPU requires tuning the maximum tree depth. Make this
+configurable from the start.
+* If a primitive spans more than one leaf cell in the datastructure, it is
+sufficient for this project to count the primitive in each leaf cell.
+
 ### Handling Long-Running CUDA Threads
 
 By default, your GPU driver will probably kill a CUDA kernel if it runs for more than 5 seconds. There's a way to disable this timeout. Just beware of infinite loops - they may lock up your computer.
@@ -214,7 +275,7 @@ Cameras are defined in the following fashion:
 * DEPTH (int depth) //maximum depth (number of times the path will bounce)
 * FILE (string filename) //file to output render to upon completion
 * EYE (float x) (float y) (float z) //camera's position in worldspace
-* VIEW (float x) (float y) (float z) //camera's view direction
+* LOOKAT (float x) (float y) (float z) //point in space that the camera orbits around and points at
 * UP (float x) (float y) (float z) //camera's up vector
 
 Objects are defined in the following fashion:

@@ -59,29 +59,23 @@ struct RenderState {
     std::string imageName;
 };
 
-struct Path {
+struct PathSegment {
 	Ray ray;
-	glm::vec3 color;
+  glm::vec3 color;
 	int pixelIndex;
-	bool terminated;
+	int remainingBounces;
 };
-
 
 enum MaterialShadingTechnique {
 	PHONG_DIFFUSE,
 	PHONG_SPECULAR
 };
 
-struct DiffusePhongShadingChunk {
-	bool activated;
-	int materialId;
-	int pixelId;
-};
-
-struct SpecularPhongShadingChunk {
-	bool activated;
-	int materialId;
-	int pixelId;
-	glm::vec3 rayDirection;
-	glm::vec3 normal;
+// Use with a corresponding PathSegment to do:
+// 1) color contribution computation
+// 2) BSDF evaluation: generate a new ray
+struct ShadeableIntersection {
+  float t;
+  glm::vec3 surfaceNormal;
+  int materialId;
 };
