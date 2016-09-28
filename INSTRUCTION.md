@@ -99,14 +99,16 @@ with point value up to +20/100 at the grader's discretion
   [*GPU Gems 3*, Chapter 39](http://http.developer.nvidia.com/GPUGems3/gpugems3_ch39.html).)
   Note that this is not an option if you implemented shared memory stream
   compaction as extra credit for Project 2.
-* These 2 smaller features:
+* 2 of these 3 smaller features:
   * Refraction (e.g. glass/water) [PBRT 8.2] with Frensel effects using
     [Schlick's approximation](https://en.wikipedia.org/wiki/Schlick's_approximation)
     or more accurate methods [PBRT 8.5]. You can use `glm::refract` for
     Snell's law.
+    * Recommended but not required: non-perfect specular surfaces. (See below.)
   * Physically-based depth-of-field (by jittering rays within an aperture)
     [PBRT 6.2.3].
-  * Recommended but not required: non-perfect specular surfaces. (See below.)
+  * Stochastic Sampled Antialiasing. See Paul Bourke's [notes](http://paulbourke.net/miscellaneous/aliasing/).
+  Keep in mind how this influences the first-bounce cache in part 1.
 * Texture mapping [PBRT 10.4] and Bump mapping [PBRT 9.3].
   * Implement file-loaded textures AND a basic procedural texture
   * Provide a performance comparison between the two
@@ -362,3 +364,4 @@ The template of the comment section of your pull request is attached below, you 
 ## References
 
 * [PBRT] Physically Based Rendering, Second Edition: From Theory To Implementation. Pharr, Matt and Humphreys, Greg. 2010.
+* Antialiasing and Raytracing. Chris Cooksey and Paul Bourke, http://paulbourke.net/miscellaneous/aliasing/
