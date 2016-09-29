@@ -1,7 +1,7 @@
 Proj 3 CUDA Path Tracer - Instructions
 ========================
 
-This is due **TBD** evening at midnight.
+This is due **Sunday October 9** at midnight.
 
 **Summary:**
 In this project, you'll implement a CUDA-based path tracer capable of rendering
