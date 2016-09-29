@@ -117,12 +117,11 @@ with point value up to +20/100 at the grader's discretion
 * Some method of defining object motion, and motion blur by averaging samples
   at different times in the animation.
 * Subsurface scattering [PBRT 5.6.2, 11.6].
-* Arbitrary mesh loading and rendering (e.g. `gltf` files or `obj` files) with
+* Arbitrary mesh loading and rendering (e.g. `obj` files) with
 toggleable bounding volume intersection culling
   * You can find models online or export them from your favorite 3D modeling application.
   With approval, you may use a third-party loading code to bring the data
-  into C++. [tinyGltf](https://github.com/syoyo/tinygltfloader) and
-  [tinyObj](http://syoyo.github.io/tinyobjloader/) are both highly recommended.
+  into C++. [tinyObj](http://syoyo.github.io/tinyobjloader/) is highly recommended.
   * You can use the triangle intersection function `glm::intersectRayTriangle`.
   * bounding volume intersection culling: reduce the number of rays that have to
   be checked against the entire mesh by first checking rays against a volume
