@@ -341,7 +341,13 @@ In addition:
   (i.e. no light can escape the scene). Again, compare the performance effects
   of stream compaction! Remember, stream compaction only affects rays which
   terminate, so what might you expect?
+* For optimizations that target specific kernels, we recommend using
+  stacked bar graphs to convey total execution time and improvements in
+  individual kernels. For example:
 
+  ![Clearly the Macchiato is optimal.](img/stacked_bar_graph.png)
+
+  Timings from NSight should be very useful for generating these kinds of charts.
 
 ## Submit
 
