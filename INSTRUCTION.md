@@ -117,6 +117,7 @@ with point value up to +20/100 at the grader's discretion
 * Some method of defining object motion, and motion blur by averaging samples
   at different times in the animation.
 * Subsurface scattering [PBRT 5.6.2, 11.6].
+* [Better hemisphere sampling methods](http://graphics.ucsd.edu/courses/cse168_s14/ucsd/CSE168_11_Random.pdf)
 * Arbitrary mesh loading and rendering (e.g. `obj` files) with
 toggleable bounding volume intersection culling
   * You can find models online or export them from your favorite 3D modeling application.
@@ -370,3 +371,4 @@ The template of the comment section of your pull request is attached below, you 
 
 * [PBRT] Physically Based Rendering, Second Edition: From Theory To Implementation. Pharr, Matt and Humphreys, Greg. 2010.
 * Antialiasing and Raytracing. Chris Cooksey and Paul Bourke, http://paulbourke.net/miscellaneous/aliasing/
+* [Sampling notes](http://graphics.ucsd.edu/courses/cse168_s14/) from Steve Rotenberg and Matteo Mannino, University of California, San Diego, CSE168: Rendering Algorithms
