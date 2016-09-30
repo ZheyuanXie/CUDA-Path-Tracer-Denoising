@@ -61,14 +61,9 @@ struct RenderState {
 
 struct PathSegment {
 	Ray ray;
-  glm::vec3 color;
+	glm::vec3 color;
 	int pixelIndex;
 	int remainingBounces;
-};
-
-enum MaterialShadingTechnique {
-	PHONG_DIFFUSE,
-	PHONG_SPECULAR
 };
 
 // Use with a corresponding PathSegment to do:
