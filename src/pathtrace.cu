@@ -142,12 +142,17 @@ __global__ void generateRayFromCamera(Camera cam, int iter, int traceDepth, Path
 	}
 }
 
+// TODO: 
+// pathTraceOneBounce handles ray intersections, generate intersections for shading, 
+// and scatter new ray. You might want to call scatterRay from interactions.h
 __global__ void pathTraceOneBounce(
 	int depth
 	, int num_paths
 	, PathSegment * pathSegments
 	, Geom * geoms
 	, int geoms_size
+	, Material * materials
+	, int material_size
 	, ShadeableIntersection * intersections
 	)
 {
@@ -183,8 +188,8 @@ __global__ void pathTraceOneBounce(
 			}
 			// TODO: add more intersection tests here... triangle? metaball? CSG?
 
-      // Compute the minimum t from the intersection tests to determine what
-      // scene geometry object was hit first.
+			// Compute the minimum t from the intersection tests to determine what
+			// scene geometry object was hit first.
 			if (t > 0.0f && t_min > t)
 			{
 				t_min = t;
@@ -193,6 +198,10 @@ __global__ void pathTraceOneBounce(
 				normal = tmp_normal;
 			}
 		}
+
+
+		// TODO: scatter the ray, generate intersections for shading
+		// feel free to modify the code below
 
 		if (hit_geom_index == -1)
 		{
@@ -343,6 +352,8 @@ void pathtrace(uchar4 *pbo, int frame, int iter) {
 		, dev_paths
 		, dev_geoms
 		, hst_scene->geoms.size()
+		, dev_materials
+		, hst_scene->materials.size()
 		, dev_intersections
 		);
 	checkCUDAError("trace one bounce");
