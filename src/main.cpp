@@ -173,6 +173,7 @@ void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
 }
 
 void mousePositionCallback(GLFWwindow* window, double xpos, double ypos) {
+  if (xpos == lastX || ypos == lastY) return; // otherwise, clicking back into window causes re-start
   if (leftMousePressed) {
     // compute new camera parameters
     phi -= (xpos - lastX) / width;
