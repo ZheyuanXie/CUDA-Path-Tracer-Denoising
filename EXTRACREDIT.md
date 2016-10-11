@@ -1,7 +1,7 @@
  Path Tracer Extra Credit: Optimizations
 ========================
 
-This week (10/10/2016 - 10/16/2016) you will have the opportunity to add some additional optimizations to your pathtracer, based on [concepts discussed in lecture](https://github.com/CIS565-Fall-2016/cis565-fall-2016.github.io/blob/master/lectures/5-CUDA-Performance.pdf):
+This week (ending 10/16/2016) you will have the opportunity to add some additional optimizations to your pathtracer, based on [concepts discussed in lecture](https://github.com/CIS565-Fall-2016/cis565-fall-2016.github.io/blob/master/lectures/5-CUDA-Performance.pdf):
 - Warp Partitioning
 - Memory Coalescing
 - Overcoming Bank Conflicts in Shared Memory
