@@ -1,7 +1,9 @@
  Path Tracer Extra Credit: Optimizations
 ========================
 
-This week (ending 10/16/2016) you will have the opportunity to add some additional optimizations to your pathtracer, based on [concepts discussed in lecture](https://github.com/CIS565-Fall-2016/cis565-fall-2016.github.io/blob/master/lectures/5-CUDA-Performance.pdf):
+This week (ending 10/16/2016) you will have the opportunity to add some additional
+optimizations to your pathtracer. This is 100% optional!
+Optimizations will mostly be based on [concepts discussed in lecture](https://github.com/CIS565-Fall-2016/cis565-fall-2016.github.io/blob/master/lectures/5-CUDA-Performance.pdf):
 - Warp Partitioning
 - Memory Coalescing
 - Overcoming Bank Conflicts in Shared Memory
@@ -11,10 +13,10 @@ This week (ending 10/16/2016) you will have the opportunity to add some addition
 - Loop Unrolling
 - Modified Thread Granularity
 
-We don't necessarily know where you will find these tools handy, so spend some
-time thinking about ways they may fit in your implementation. To give you more
-material to work with, you may work on adapting your own stream compaction code
-from Project 2 into the Pathtracer so you can also optimize/analyze that.
+Spend some time thinking about ways these tools may fit in your implementation.
+To give you more material to work with, you may work on adapting your own
+stream compaction code from Project 2 into the Pathtracer so you can also
+optimize/analyze that.
 
 If you haven't done so already, we also encourage you to implement shared-memory
 stream compaction for the sake of investigating bank conflicts.
@@ -24,6 +26,9 @@ feel free to tackle algorithmic optimizations as well, including acceleration
 features you saw in the standard assignment but didn't want to tackle due to
 time constraints. If in doubt as to whether or not a feature counts as an
 "optimization," please ask in the [Google Group](https://groups.google.com/forum/#!forum/cis-565-fall-2016).
+
+A thorough exploration of any single optimization area will be worth 5 points.
+Larger algorithmic changes with analysis will generally be worth 10 points.
 
 ## `git`ing Started
 In your project directory, open a new branch off the branch you used for your
