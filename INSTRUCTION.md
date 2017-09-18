@@ -1,7 +1,7 @@
 Proj 3 CUDA Path Tracer - Instructions
 ========================
 
-This is due **Sunday October 9** at midnight.
+This is due **Friday September 29** at midnight.
 
 **Summary:**
 In this project, you'll implement a CUDA-based path tracer capable of rendering
@@ -360,7 +360,6 @@ The title should be "Project 3: YOUR NAME".
 The template of the comment section of your pull request is attached below, you can do some copy and paste:  
 
 * [Repo Link](https://link-to-your-repo)
-* `Your PENNKEY`
 * (Briefly) Mentions features that you've completed. Especially those bells and whistles you want to highlight
     * Feature 0
     * Feature 1
