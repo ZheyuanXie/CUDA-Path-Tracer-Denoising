@@ -72,7 +72,7 @@ You will need to implement the following features:
   * Ideal Diffuse surfaces (using provided cosine-weighted scatter function, see below.) [PBRT 8.3].
   * Perfectly specular-reflective (mirrored) surfaces (e.g. using `glm::reflect`).
   * See notes on diffuse/specular in `scatterRay` and on imperfect specular below.
-* Path continuation/termination using Stream Compaction
+* Path continuation/termination using Stream Compaction from Project 2
 * After you have a [basic pathtracer up and running](img/REFERENCE_cornell.5000samp.png),
 implement a means of making rays/pathSegments/intersections contiguous in memory
 by material type. This should be easily toggleable.
@@ -178,6 +178,9 @@ search for `CHECKITOUT`. You'll have to implement parts labeled with `TODO`.
     call `calculateRandomDirectionInHemisphere`. See comments for details.
 * `src/main.cpp`: you don't need to do anything here, but you can change the
   program to save `.hdr` image files, if you want (for postprocessing).
+* `stream_compaction`: A dummy folder into which you should place your
+  Stream Compaction implementation from Project 2. It should be sufficient to copy the files
+  from [here](https://github.com/CIS565-Fall-2017/Project2-Stream-Compaction/tree/master/stream_compaction)
 
 ### Generating random numbers
 
