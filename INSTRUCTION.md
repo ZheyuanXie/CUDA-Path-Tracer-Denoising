@@ -3,6 +3,8 @@ Proj 3 CUDA Path Tracer - Instructions
 
 This is due **Friday September 29** at midnight.
 
+Pathtracing Primer: https://docs.google.com/presentation/d/1q3h2GVDorEFzmESNfFwR6mODnzS6WbftiVsvaFNGihQ/
+
 **Summary:**
 In this project, you'll implement a CUDA-based path tracer capable of rendering
 globally-illuminated images very quickly.
