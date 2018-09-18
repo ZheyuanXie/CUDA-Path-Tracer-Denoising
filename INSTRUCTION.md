@@ -1,9 +1,9 @@
 Proj 3 CUDA Path Tracer - Instructions
 ========================
 
-This is due **Sunday October 1** at midnight.
+This is due **Sunday September 30th** at midnight.
 
-Pathtracing Primer: https://docs.google.com/presentation/d/1q3h2GVDorEFzmESNfFwR6mODnzS6WbftiVsvaFNGihQ/
+Pathtracing Primer: https://docs.google.com/presentation/d/11ZBENtCqqWIplLXq34hFlJuwSUmbKqWs5ItFV7mjD0s/edit?usp=sharing
 
 **Summary:**
 In this project, you'll implement a CUDA-based path tracer capable of rendering
@@ -111,6 +111,9 @@ with point value up to +20/100 at the grader's discretion
     [PBRT 6.2.3].
   * Stochastic Sampled Antialiasing. See Paul Bourke's [notes](http://paulbourke.net/miscellaneous/aliasing/).
   Keep in mind how this influences the first-bounce cache in part 1.
+* Procedural Shapes & Textures.
+  * You must generate a minimum of two different complex shapes procedurally. (Not primitives)
+  * You must be able to shade object with a minimum of two different textures
 * Texture mapping [PBRT 10.4] and Bump mapping [PBRT 9.3].
   * Implement file-loaded textures AND a basic procedural texture
   * Provide a performance comparison between the two
@@ -182,7 +185,7 @@ search for `CHECKITOUT`. You'll have to implement parts labeled with `TODO`.
   program to save `.hdr` image files, if you want (for postprocessing).
 * `stream_compaction`: A dummy folder into which you should place your
   Stream Compaction implementation from Project 2. It should be sufficient to copy the files
-  from [here](https://github.com/CIS565-Fall-2017/Project2-Stream-Compaction/tree/master/stream_compaction)
+  from [here](https://github.com/CIS565-Fall-2018/Project2-Stream-Compaction/tree/master/stream_compaction)
 
 ### Generating random numbers
 
@@ -196,7 +199,7 @@ There is a convenience function for generating a random engine using a
 combination of index, iteration, and depth as the seed:
 
 ```
-thrust::default_random_engine rng = random_engine(iter, index, depth);
+thrust::default_random_engine rng = makeSeededRandomEngine(iter, index, path.remainingBounces);
 ```
 
 ### Imperfect specular lighting
@@ -298,7 +301,8 @@ Objects are defined in the following fashion:
 
 Two examples are provided in the `scenes/` directory: a single emissive sphere,
 and a simple cornell box made using cubes for walls and lights and a sphere in
-the middle.
+the middle. You may want to add to this file for features you implement. (DOF,
+Anti-aliasing, etc...)
 
 ## Third-Party Code Policy
 
