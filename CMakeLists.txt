@@ -1,95 +1,101 @@
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.1)
 
 project(cis565_path_tracer)
 
+set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 
-# Set up include and lib paths
-set(EXTERNAL "external")
-include_directories("${EXTERNAL}")
-include_directories("${EXTERNAL}/include")
-if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-    set(EXTERNAL_LIB_PATH "${EXTERNAL}/lib/osx")
-elseif(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-    set(EXTERNAL_LIB_PATH "${EXTERNAL}/lib/linux" "/usr/lib64")
-elseif(WIN32)
-    set(EXTERNAL_LIB_PATH "${EXTERNAL}/lib/win")
-endif()
-link_directories(${EXTERNAL_LIB_PATH})
-list(APPEND CMAKE_LIBRARY_PATH "${EXTERNAL_LIB_PATH}")
-
-
-# Find up and set up core dependency libs
-
-set(GLFW_INCLUDE_DIR "${EXTERNAL}/include")
-set(GLFW_LIBRARY_DIR "${CMAKE_LIBRARY_PATH}")
-find_library(GLFW_LIBRARY "glfw3" HINTS "${GLFW_LIBRARY_DIR}")
-
-set(GLEW_INCLUDE_DIR "${EXTERNAL}/include")
-set(GLEW_LIBRARY_DIR "${CMAKE_LIBRARY_PATH}")
-add_definitions(-DGLEW_STATIC)
-find_package(GLEW)
-
-find_package(OpenGL)
-
-set(CORELIBS
-    "${GLFW_LIBRARY}"
-    "${OPENGL_LIBRARY}"
-    "${GLEW_LIBRARY}"
-    )
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 # Enable C++11 for host code
 set(CMAKE_CXX_STANDARD 11)
 
-# Enable CUDA debug info in debug mode builds
-list(APPEND CUDA_NVCC_FLAGS_DEBUG -G -g)
-
-# OSX-specific hacks/fixes
-if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-    list(APPEND CORELIBS "-framework IOKit")
-    list(APPEND CORELIBS "-framework Cocoa")
-    list(APPEND CORELIBS "-framework CoreVideo")
+# Set a default build type if none was specified
+if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+    SET(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build." FORCE)
+    # Set the possible values of build type for cmake-gui
+    SET_PROPERTY(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
 endif()
 
-# Linux-specific hacks/fixes
-if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-    list(APPEND CMAKE_EXE_LINKER_FLAGS "-lX11 -lXxf86vm -lXrandr -lXi")
-endif()
+########################################
+# CUDA Setup
+########################################
+find_package(CUDA 10 REQUIRED)
+include(${CMAKE_MODULE_PATH}/CUDAComputesList.cmake)
 
-if (WIN32)
-	list(APPEND CORELIBS legacy_stdio_definitions.lib)
-endif()
+list(APPEND CUDA_NVCC_FLAGS ${CUDA_GENERATE_CODE})
+list(APPEND CUDA_NVCC_FLAGS_DEBUG "-g -G")
+set(CUDA_VERBOSE_BUILD ON)
 
-# Crucial magic for CUDA linking
-find_package(Threads REQUIRED)
-find_package(CUDA 8.0 REQUIRED)
+if(WIN32)
+    # Set up include and lib paths
+    set(CUDA_HOST_COMPILER ${CMAKE_CXX_COMPILER} CACHE FILEPATH "Host side compiler used by NVCC" FORCE)
+endif(WIN32)
+########################################
 
-set(CUDA_ATTACH_VS_BUILD_RULE_TO_CUDA_FILE ON)
-set(CUDA_SEPARABLE_COMPILATION ON)
+find_package(OpenGL REQUIRED)
 
-if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-    set(CUDA_PROPAGATE_HOST_FLAGS OFF)
-endif()
+if(UNIX)
+    find_package(glfw3 REQUIRED)
+    find_package(GLEW REQUIRED)
+    set(LIBRARIES glfw ${GLEW_LIBRARIES} ${OPENGL_gl_LIBRARY})
+else(UNIX)
+    set(EXTERNAL "external")
 
-include_directories(.)
+    set(GLFW_ROOT_DIR ${EXTERNAL})
+    set(GLFW_USE_STATIC_LIBS ON)
+    find_package(GLFW REQUIRED)
+
+    set(GLEW_ROOT_DIR ${EXTERNAL})
+    set(GLEW_USE_STATIC_LIBS ON)
+    find_package(GLEW REQUIRED)
+
+    add_definitions(${GLEW_DEFINITIONS})
+    include_directories(${GLEW_INCLUDE_DIR} ${GLFW_INCLUDE_DIR})
+    set(LIBRARIES ${GLEW_LIBRARY} ${GLFW_LIBRARY} ${OPENGL_LIBRARY})
+endif(UNIX)
+
+set(GLM_ROOT_DIR "external")
+find_package(GLM REQUIRED)
+include_directories(${GLM_INCLUDE_DIRS})
+
+set(headers
+    src/main.h
+    src/image.h
+    src/interactions.h
+    src/intersections.h
+    src/glslUtility.hpp
+    src/pathtrace.h
+    src/scene.h
+    src/sceneStructs.h
+    src/preview.h
+    src/utilities.h
+    )
+
+set(sources
+    src/main.cpp
+    src/stb.cpp
+    src/image.cpp
+    src/glslUtility.cpp
+    src/pathtrace.cu
+    src/scene.cpp
+    src/preview.cpp
+    src/utilities.cpp
+    )
+
+list(SORT headers)
+list(SORT sources)
+
+source_group(Headers FILES ${headers})
+source_group(Sources FILES ${sources})
+
 #add_subdirectory(stream_compaction)  # TODO: uncomment if using your stream compaction
-add_subdirectory(src)
 
-cuda_add_executable(${CMAKE_PROJECT_NAME}
-    "src/main.h"
-    "src/main.cpp"
-    )
-
+cuda_add_executable(${CMAKE_PROJECT_NAME} ${sources} ${headers})
 target_link_libraries(${CMAKE_PROJECT_NAME}
-    src
+    ${LIBRARIES}
     #stream_compaction  # TODO: uncomment if using your stream compaction
-    ${CORELIBS}
-    )
-
-add_custom_command(
-    TARGET ${CMAKE_PROJECT_NAME}
-    POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-        ${CMAKE_SOURCE_DIR}/shaders
-        ${CMAKE_BINARY_DIR}/shaders
     )
