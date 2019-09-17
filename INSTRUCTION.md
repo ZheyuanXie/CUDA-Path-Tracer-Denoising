@@ -1,9 +1,9 @@
 Proj 3 CUDA Path Tracer - Instructions
 ========================
 
-This is due **Sunday September 30th** at midnight.
+This is due on **Sunday, September 29th** at 11:59 pm.
 
-Pathtracing Primer: https://docs.google.com/presentation/d/11ZBENtCqqWIplLXq34hFlJuwSUmbKqWs5ItFV7mjD0s/edit?usp=sharing
+[Link to "Pathtracing Primer" Slides](https://docs.google.com/presentation/d/1bFtutDe9POZDPiqD9npeOEOWh783xHy4xf2AdJt-pEI/edit?usp=sharing)
 
 **Summary:**
 In this project, you'll implement a CUDA-based path tracer capable of rendering
@@ -133,9 +133,9 @@ toggleable bounding volume intersection culling
   be checked against the entire mesh by first checking rays against a volume
   that completely bounds the mesh. For full credit, provide performance analysis
   with and without this optimization.
-* Hierarchical spatial datastructures - for better ray/scene intersection testing
+* Hierarchical spatial data structures - for better ray/scene intersection testing
   * Octree recommended - this feature is more about traversal on the GPU than perfect tree structure
-  * CPU-side datastructure construction is sufficient - GPU-side construction was
+  * CPU-side data structure construction is sufficient - GPU-side construction was
   a [final project.](https://github.com/jeremynewlin/Accel)
   * Make sure this is toggleable for performance comparisons
   * If implemented in conjunction with Arbitrary mesh loading, this qualifies as the
@@ -145,6 +145,10 @@ toggleable bounding volume intersection culling.
 Group rays by material without a  sorting pass. A sane implementation will
 require considerable refactoring, since every supported material suddenly needs
 its own kernel.
+* [*Open Image AI Denoiser* ](https://github.com/OpenImageDenoise/oidn) Open Image Denoiser is an image denoiser which works by applying a filter on Monte-Carlo-based pathtracer output. The denoiser runs on the CPU and takes in path tracer output from 1spp to beyond. In order to get full credit for this, you must pass in at least one extra buffer along with the [raw "beauty" buffer](https://github.com/OpenImageDenoise/oidn#open-image-denoise-overview). **Ex:** Beauty + Normals.
+ * Part of this extra credit is figuring out where the filter should be called, and how you should manage the data for the filter step.
+ * It is important to note that integrating this is not as simple as it may seem at first glance. Library integration, buffer creation, device compatibility, and more are all real problems which will appear, and it may be hard to debug them. Please only try this if you have finished the core assignment early and would like extra points,
+
 
 This 'extra features' list is not comprehensive. If you have a particular idea
 you would like to implement (e.g. acceleration structures, etc.), please
