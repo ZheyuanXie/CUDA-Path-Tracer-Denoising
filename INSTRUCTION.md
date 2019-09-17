@@ -1,7 +1,7 @@
 Proj 3 CUDA Path Tracer - Instructions
 ========================
 
-This is due **Sunday September 30th** at midnight.
+This is due **Sunday September 29th** at midnight.
 
 Pathtracing Primer: https://docs.google.com/presentation/d/11ZBENtCqqWIplLXq34hFlJuwSUmbKqWs5ItFV7mjD0s/edit?usp=sharing
 
@@ -366,7 +366,7 @@ Beware of any build issues discussed on the Google Group.
 
 Open a GitHub pull request so that we can see that you have finished.
 The title should be "Project 3: YOUR NAME".
-The template of the comment section of your pull request is attached below, you can do some copy and paste:  
+The template of the comment section of your pull request is attached below, you can do some copy and paste:
 
 * [Repo Link](https://link-to-your-repo)
 * (Briefly) Mentions features that you've completed. Especially those bells and whistles you want to highlight
