@@ -1,7 +1,7 @@
 Proj 3 CUDA Path Tracer - Instructions
 ========================
 
-This is due **Sunday September 29th** at midnight.
+This is due **Sunday September 29th** at 11:59pm.
 
 [Link to "Pathtracing Primer" Slides](https://docs.google.com/presentation/d/1bFtutDe9POZDPiqD9npeOEOWh783xHy4xf2AdJt-pEI/edit?usp=sharing)
 
