@@ -73,18 +73,28 @@ void scatterRay(
         glm::vec3 normal,
         const Material &m,
         thrust::default_random_engine &rng) {
+  thrust::uniform_real_distribution<float> u01(0, 1);
+  float dice = u01(rng);
 
-  if (m.hasReflective) { // Specular Reflection
+  if (m.hasRefractive && u01(rng) < 0.9) {            // Refreaction
+    // TODO
+    bool into = glm::dot(pathSegment.ray.direction, normal) > 0;
+    float ior = 1.0f / m.indexOfRefraction;
+    if (into) {
+      ior = 1.0f / ior;
+    }
+    pathSegment.ray.direction = glm::refract(pathSegment.ray.direction, normal, ior);
+    normal = -normal;
+  } else if (m.hasReflective && u01(rng) < 0.5) {     // Specular Reflection
     pathSegment.ray.direction = glm::reflect(pathSegment.ray.direction, normal);
     pathSegment.color *= m.specular.color;
-  }
-  else {                // Diffusive Reflection
+  } else {                                            // Diffusive Reflection
     pathSegment.ray.direction = calculateRandomDirectionInHemisphere(normal, rng);
-    pathSegment.color *= m.color;
   }
 
+  pathSegment.color *= m.color;
   glm::clamp(pathSegment.color, glm::vec3(0.0f), glm::vec3(1.0f));              // Clamp the color
-  pathSegment.ray.origin = intersect + 0.0001f * pathSegment.ray.direction;     // New ray shoot from intersection point
+  pathSegment.ray.origin = intersect + 0.0001f * normal;     // New ray shoot from intersection point
   pathSegment.remainingBounces--;                                               // Decrease bounce counter
 
 }

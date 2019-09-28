@@ -145,11 +145,37 @@ __global__ void generateRayFromCamera(Camera cam, int iter, int traceDepth, Path
 		segment.ray.origin = cam.position;
     segment.color = glm::vec3(1.0f, 1.0f, 1.0f);
 
-		// TODO: implement antialiasing by jittering the ray
-		segment.ray.direction = glm::normalize(cam.view
-			- cam.right * cam.pixelLength.x * ((float)x - (float)cam.resolution.x * 0.5f)
-			- cam.up * cam.pixelLength.y * ((float)y - (float)cam.resolution.y * 0.5f)
-			);
+#if defined(DEPTH_OF_FIELD) || defined(ANTI_ALIASING)
+    thrust::default_random_engine rng = makeSeededRandomEngine(iter, index, 0);
+    thrust::uniform_real_distribution<float> u01(0, 1);
+#endif
+
+#if defined(ANTI_ALIASING)
+    segment.ray.direction = glm::normalize(cam.view
+      - cam.right * cam.pixelLength.x * ((float)x + u01(rng) - (float)cam.resolution.x * 0.5f)
+      - cam.up * cam.pixelLength.y * ((float)y + u01(rng) - (float)cam.resolution.y * 0.5f)
+    );
+#else
+    segment.ray.direction = glm::normalize(cam.view
+      - cam.right * cam.pixelLength.x * ((float)x - (float)cam.resolution.x * 0.5f)
+      - cam.up * cam.pixelLength.y * ((float)y - (float)cam.resolution.y * 0.5f)
+    );
+#endif
+
+#if defined(DEPTH_OF_FIELD)
+    // sample point on lens
+    float r = u01(rng) * lens_radius;
+    float theta = u01(rng) * 2 * PI;
+    glm::vec3 p_lens(r * cos(theta), r * sin(theta), 0.0f);
+    
+    // compute point on plane of focus
+    float ft = focal_distance / glm::abs(segment.ray.direction.z);
+    glm::vec3 p_focus = segment.ray.origin + ft * segment.ray.direction;
+
+    // update ray for effect of lens
+    segment.ray.origin += p_lens;
+    segment.ray.direction = glm::normalize(p_focus - segment.ray.origin);
+#endif
 
 		segment.pixelIndex = index;
 		segment.remainingBounces = traceDepth;
@@ -397,7 +423,7 @@ void pathtrace(uchar4 *pbo, int frame, int iter) {
 
 	      // path trace
 	      dim3 numblocksPathSegmentTracing = (num_paths + blockSize1d - 1) / blockSize1d;
-#ifdef CACHE_FIRST_ITERATION
+#if defined(CACHE_FIRST_ITERATION) && !defined(ANTI_ALIASING) 
         if (iter != 0 || (iter == 0 && depth == 0)) {
           computeIntersections<<<numblocksPathSegmentTracing, blockSize1d>>> (
             depth
