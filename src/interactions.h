@@ -73,7 +73,18 @@ void scatterRay(
         glm::vec3 normal,
         const Material &m,
         thrust::default_random_engine &rng) {
-    // TODO: implement this.
-    // A basic implementation of pure-diffuse shading will just call the
-    // calculateRandomDirectionInHemisphere defined above.
+
+  if (m.hasReflective) { // Specular Reflection
+    pathSegment.ray.direction = glm::reflect(pathSegment.ray.direction, normal);
+    pathSegment.color *= m.specular.color;
+  }
+  else {                // Diffusive Reflection
+    pathSegment.ray.direction = calculateRandomDirectionInHemisphere(normal, rng);
+    pathSegment.color *= m.color;
+  }
+
+  glm::clamp(pathSegment.color, glm::vec3(0.0f), glm::vec3(1.0f));              // Clamp the color
+  pathSegment.ray.origin = intersect + 0.0001f * pathSegment.ray.direction;     // New ray shoot from intersection point
+  pathSegment.remainingBounces--;                                               // Decrease bounce counter
+
 }
