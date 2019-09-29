@@ -5,7 +5,7 @@
 
 #define CACHE_FIRST_ITERATION
 //#define SORT_BY_MATERIALS
-#define ANTI_ALIASING
+//#define ANTI_ALIASING
 //#define DEPTH_OF_FIELD
 
 // thin lens camera model

@@ -89,6 +89,7 @@ static ShadeableIntersection * dev_intersections = NULL;
 // TODO: static variables for device memory, any extra info you need, etc
 // ...
 static ShadeableIntersection * dev_intersections_cache = NULL;    // cache first iteration.
+static Triangle * dev_triangles = NULL;                           // triangles
 
 void pathtraceInit(Scene *scene) {
     hst_scene = scene;
@@ -110,6 +111,8 @@ void pathtraceInit(Scene *scene) {
   	cudaMemset(dev_intersections, 0, pixelcount * sizeof(ShadeableIntersection));
 
     // TODO: initialize any extra device memeory you need
+    cudaMalloc(&dev_triangles, scene->triangles.size() * sizeof(Triangle));
+    cudaMemcpy(dev_triangles, scene->triangles.data(), scene->triangles.size() * sizeof(Triangle), cudaMemcpyHostToDevice);
 
     checkCUDAError("pathtraceInit");
 }
@@ -120,7 +123,10 @@ void pathtraceFree() {
   	cudaFree(dev_geoms);
   	cudaFree(dev_materials);
   	cudaFree(dev_intersections);
+
     // TODO: clean up any extra device memory you created
+    cudaFree(dev_intersections_cache);
+    cudaFree(dev_triangles);
 
     checkCUDAError("pathtraceFree");
 }
@@ -191,6 +197,7 @@ __global__ void computeIntersections(
 	, int num_paths
 	, PathSegment * pathSegments
 	, Geom * geoms
+  , Triangle* triangles
 	, int geoms_size
 	, ShadeableIntersection * intersections
 	)
@@ -224,8 +231,11 @@ __global__ void computeIntersections(
 			else if (geom.type == SPHERE)
 			{
 				t = sphereIntersectionTest(geom, pathSegment.ray, tmp_intersect, tmp_normal, outside);
-			}
-			// TODO: add more intersection tests here... triangle? metaball? CSG?
+      }
+      else if (geom.type == MESH)
+      {
+        t = meshIntersectionTest(geom, triangles, pathSegment.ray, tmp_intersect, tmp_normal, outside);
+      }
 
 			// Compute the minimum t from the intersection tests to determine what
 			// scene geometry object was hit first.
@@ -430,6 +440,7 @@ void pathtrace(uchar4 *pbo, int frame, int iter) {
             , num_paths
             , dev_paths
             , dev_geoms
+            , dev_triangles
             , hst_scene->geoms.size()
             , dev_intersections
             );
@@ -446,6 +457,7 @@ void pathtrace(uchar4 *pbo, int frame, int iter) {
           , num_paths
           , dev_paths
           , dev_geoms
+          , dev_triangles
           , hst_scene->geoms.size()
           , dev_intersections
           );
@@ -483,7 +495,7 @@ void pathtrace(uchar4 *pbo, int frame, int iter) {
         num_paths = dev_path_end - dev_paths;
         iterationComplete = (num_paths <= 0);
 
-         cout << "Iter:" << iter << ", Depth: " << depth << ", Remaining Rays:" << num_paths << endl;
+         //cout << "Iter:" << iter << ", Depth: " << depth << ", Remaining Rays:" << num_paths << endl;
 	  }
 
     // Assemble this iteration and apply it to the image
