@@ -60,6 +60,10 @@ struct Camera {
     glm::vec3 right;
     glm::vec2 fov;
     glm::vec2 pixelLength;
+    bool depth_of_field;
+    float lens_radius;
+    float focal_distance;
+    bool antialiasing;
 };
 
 struct RenderState {
