@@ -5,6 +5,7 @@
 
 #define CACHE_FIRST_ITERATION
 //#define SORT_BY_MATERIALS
+//#define STREAM_COMPACTION
 
 void pathtraceInit(Scene *scene);
 void pathtraceFree();

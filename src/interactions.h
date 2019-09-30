@@ -74,21 +74,32 @@ void scatterRay(
         const Material &m,
         thrust::default_random_engine &rng) {
   thrust::uniform_real_distribution<float> u01(0, 1);
-  float dice = u01(rng);
 
-  if (m.hasRefractive && u01(rng) < 0.9) {            // Refreaction
-    // TODO
-    bool into = glm::dot(pathSegment.ray.direction, normal) > 0;
-    float ior = 1.0f / m.indexOfRefraction;
-    if (into) {
-      ior = 1.0f / ior;
+  if (m.hasRefractive) {                                  // Refreaction
+    float eta = 1.0f / m.indexOfRefraction;
+    float unit_projection = glm::dot(pathSegment.ray.direction, normal);
+    if (unit_projection > 0) {
+      eta = 1.0f / eta;
     }
-    pathSegment.ray.direction = glm::refract(pathSegment.ray.direction, normal, ior);
-    normal = -normal;
-  } else if (m.hasReflective && u01(rng) < 0.5) {     // Specular Reflection
+
+    // Schlick's approximation
+    float R0 = powf((1.0f - eta) / (1.0f + eta), 2.0f);
+    float R = R0 + (1 - R0) * powf(1 - glm::abs(unit_projection), 5.0f);
+    if (R < u01(rng)) {
+      // Refracting Light
+      pathSegment.ray.direction = glm::refract(pathSegment.ray.direction, normal, eta);
+      normal = -normal;
+      pathSegment.color *= m.color;
+    } else {
+      // Reflecting Light
+      pathSegment.ray.direction = glm::reflect(pathSegment.ray.direction, normal);
+      pathSegment.color *= m.specular.color;
+    }
+    
+  } else if (u01(rng) < m.hasReflective) {                // Specular
     pathSegment.ray.direction = glm::reflect(pathSegment.ray.direction, normal);
     pathSegment.color *= m.specular.color;
-  } else {                                            // Diffusive Reflection
+  } else {                                                // Diffusive
     pathSegment.ray.direction = calculateRandomDirectionInHemisphere(normal, rng);
   }
 
@@ -96,5 +107,4 @@ void scatterRay(
   glm::clamp(pathSegment.color, glm::vec3(0.0f), glm::vec3(1.0f));              // Clamp the color
   pathSegment.ray.origin = intersect + 0.0001f * normal;     // New ray shoot from intersection point
   pathSegment.remainingBounces--;                                               // Decrease bounce counter
-
 }

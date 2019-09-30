@@ -5,6 +5,7 @@
 #include <thrust/random.h>
 #include <thrust/remove.h>
 #include <thrust/partition.h>
+#include <chrono>
 
 #include "sceneStructs.h"
 #include "scene.h"
@@ -14,6 +15,11 @@
 #include "pathtrace.h"
 #include "intersections.h"
 #include "interactions.h"
+
+using time_point_t = std::chrono::high_resolution_clock::time_point;
+time_point_t time_start;
+time_point_t time_end;
+float avg_time = 0;
 
 #define ERRORCHECK 1
 
@@ -147,20 +153,25 @@ __global__ void generateRayFromCamera(Camera cam, int iter, int traceDepth, Path
 	if (x < cam.resolution.x && y < cam.resolution.y) {
 		int index = x + (y * cam.resolution.x);
 		PathSegment & segment = pathSegments[index];
-
-		segment.ray.origin = cam.position;
+    
+    segment.ray.origin = cam.position;
     segment.color = glm::vec3(1.0f, 1.0f, 1.0f);
 
     thrust::default_random_engine rng = makeSeededRandomEngine(iter, index, 0);
     thrust::uniform_real_distribution<float> u01(0, 1);
 
+    // motion blur
+    thrust::normal_distribution<float> n01(0, 1);
+    float t = abs(n01(rng));
+    glm::vec3 view = cam.view * (1 - t) + (cam.view + cam.motion) * t;
+
     if (cam.antialiasing) {
-      segment.ray.direction = glm::normalize(cam.view
+      segment.ray.direction = glm::normalize(view
         - cam.right * cam.pixelLength.x * ((float)x + u01(rng) - (float)cam.resolution.x * 0.5f)
         - cam.up * cam.pixelLength.y * ((float)y + u01(rng) - (float)cam.resolution.y * 0.5f)
       );
     } else {
-      segment.ray.direction = glm::normalize(cam.view
+      segment.ray.direction = glm::normalize(view
         - cam.right * cam.pixelLength.x * ((float)x - (float)cam.resolution.x * 0.5f)
         - cam.up * cam.pixelLength.y * ((float)y - (float)cam.resolution.y * 0.5f)
       );
@@ -205,6 +216,10 @@ __global__ void computeIntersections(
 	if (path_index < num_paths)
 	{
 		PathSegment pathSegment = pathSegments[path_index];
+
+#ifndef STREAM_COMPACTION
+    if (pathSegment.remainingBounces <= 0) return;
+#endif // !STREAM_COMPACTION
 
 		float t;
 		glm::vec3 intersect_point;
@@ -327,7 +342,12 @@ __global__ void shadeRealMaterial(
   if (idx < num_paths)
   {
     ShadeableIntersection intersection = shadeableIntersections[idx];
-    PathSegment &segment = pathSegments[idx];
+    PathSegment &pathSegment = pathSegments[idx];
+
+#ifndef STREAM_COMPACTION
+    if (pathSegment.remainingBounces <= 0) return;
+#endif // !STREAM_COMPACTION
+
     if (intersection.t > 0.0f) { // if the intersection exists...
 
       // Set up the RNG
@@ -337,17 +357,17 @@ __global__ void shadeRealMaterial(
       glm::vec3 materialColor = material.color;
 
       if (material.emittance > 0.0f) {  // Hit light (Terminate)
-        segment.color *= (materialColor * material.emittance);
-        segment.remainingBounces = -1;
+        pathSegment.color *= (materialColor * material.emittance);
+        pathSegment.remainingBounces = -1;
       }
       else {  // Hit Material (Bounce)
-        glm::vec3 intersect = segment.ray.origin + intersection.t * segment.ray.direction;
-        scatterRay(segment, intersect, intersection.surfaceNormal, material, rng);
+        glm::vec3 intersect = pathSegment.ray.origin + intersection.t * pathSegment.ray.direction;
+        scatterRay(pathSegment, intersect, intersection.surfaceNormal, material, rng);
       }
     }
     else {    // No Intersection (Terminate)
-      segment.color = glm::vec3(0.0f);
-      segment.remainingBounces = -1;
+      pathSegment.color = glm::vec3(0.0f);
+      pathSegment.remainingBounces = -1;
     }
   }
 }
@@ -422,6 +442,7 @@ void pathtrace(uchar4 *pbo, int frame, int iter) {
 
 	  // --- PathSegment Tracing Stage ---
 	  // Shoot ray into scene, bounce between objects, push shading chunks
+    time_start = std::chrono::high_resolution_clock::now();
 
     bool iterationComplete = false;
 	  while (!iterationComplete) {
@@ -477,7 +498,7 @@ void pathtrace(uchar4 *pbo, int frame, int iter) {
         thrust::sort_by_key(thrust::device, dev_intersections, dev_intersections + num_paths, dev_paths, material_id_comparator());
 #endif // SORT_BY_MATERIALS
 
-        // shade
+        // do shading
         shadeRealMaterial<<<numblocksPathSegmentTracing, blockSize1d>>> (
           iter,
           depth,
@@ -488,13 +509,21 @@ void pathtrace(uchar4 *pbo, int frame, int iter) {
         );
         cudaDeviceSynchronize();
 
-        // stream compact
+#ifdef STREAM_COMPACTION
         dev_path_end = thrust::partition(thrust::device, dev_paths, dev_paths + num_paths, ray_continuation_condition());
         num_paths = dev_path_end - dev_paths;
         iterationComplete = (num_paths <= 0);
-
-         //cout << "Iter:" << iter << ", Depth: " << depth << ", Remaining Rays:" << num_paths << endl;
+#else
+        iterationComplete = (depth >= traceDepth);
+#endif  // STREAM_COMPACTION
 	  }
+
+    time_end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double, std::milli> duro = time_end - time_start;
+    float prev_elapsed_time_cpu_milliseconds =
+      static_cast<decltype(prev_elapsed_time_cpu_milliseconds)>(duro.count());
+    avg_time = (avg_time * (iter - 1) + prev_elapsed_time_cpu_milliseconds) / (iter);
+    cout << "Iter:" << iter << ", Time:" << prev_elapsed_time_cpu_milliseconds << ", Avg Time:" << avg_time << endl;
 
     // Assemble this iteration and apply it to the image
     dim3 numBlocksPixels = (pixelcount + blockSize1d - 1) / blockSize1d;
@@ -510,4 +539,5 @@ void pathtrace(uchar4 *pbo, int frame, int iter) {
             pixelcount * sizeof(glm::vec3), cudaMemcpyDeviceToHost);
 
     checkCUDAError("pathtrace");
+
 }

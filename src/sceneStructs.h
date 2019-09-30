@@ -64,6 +64,7 @@ struct Camera {
     float lens_radius;
     float focal_distance;
     bool antialiasing;
+    glm::vec3 motion;
 };
 
 struct RenderState {

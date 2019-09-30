@@ -6,6 +6,8 @@
 #include "sceneStructs.h"
 #include "utilities.h"
 
+#define BOUNDING_VOLUME_INTERSECTION_CULLING
+
 /**
  * Handy-dandy hash function that provides seeds for random number generation.
  */
@@ -161,6 +163,7 @@ __host__ __device__ float meshIntersectionTest(Geom mesh, Triangle* triangles, R
   rt.origin = ro;
   rt.direction = rd;
 
+#ifdef BOUNDING_VOLUME_INTERSECTION_CULLING
   // Test ray AABB intersection
   // Reference: https://gamedev.stackexchange.com/questions/18436/most-efficient-aabb-vs-ray-collision-algorithms
   // r.dir is unit direction vector of ray
@@ -181,34 +184,35 @@ __host__ __device__ float meshIntersectionTest(Geom mesh, Triangle* triangles, R
   float tmax = min(min(max(t1, t2), max(t3, t4)), max(t5, t6));
 
   // if tmax < 0, ray (line) is intersecting AABB, but the whole AABB is behind us
-  if (tmax < 0 || tmin > tmax) {      // not intersecting
+  if (tmax < 0 || tmin > tmax) {
     return -1; 
-  } else {                            // intersection possible
-
-    // find intersecting triangle with minimum t
-    float min_t = FLT_MAX;
-    int min_idx = -1;
-    for (int i = 0; i < mesh.num_triangles; i++) {
-      Triangle tri = triangles[i];
-      float t = -1;
-      glm::vec3 bary;
-      if (glm::intersectRayTriangle(rt.origin, rt.direction, tri.v[0], tri.v[1], tri.v[2], bary)) {
-        t = bary.z;
-        if (t > 0.0f && t < min_t) {
-          min_t = t;
-          min_idx = i;
-        }
-      };
-    }
-
-    if (min_idx != -1) {  // intersecting
-      glm::vec3 objspaceIntersection = getPointOnRay(rt, min_t);
-      intersectionPoint = multiplyMV(mesh.transform, glm::vec4(objspaceIntersection, 1.f));
-      normal = glm::normalize(multiplyMV(mesh.transform, glm::vec4(triangles[min_idx].n, 0.f)));
-      outside = (glm::dot(rt.origin, normal) < 0);
-      return min_t;
-    } else {              // not intersecting
-      return -1;
-    }
   }
+#endif // BOUNDING_VOLUME_INTERSECTION_CULLING
+
+  // find intersecting triangle with minimum t
+  float min_t = FLT_MAX;
+  int min_idx = -1;
+  for (int i = 0; i < mesh.num_triangles; i++) {
+    Triangle tri = triangles[i];
+    float t = -1;
+    glm::vec3 bary;
+    if (glm::intersectRayTriangle(rt.origin, rt.direction, tri.v[0], tri.v[1], tri.v[2], bary)) {
+      t = bary.z;
+      if (t > 0.0f && t < min_t) {
+        min_t = t;
+        min_idx = i;
+      }
+    };
+  }
+  
+  // no intersection detected
+  if (min_idx == -1) {
+    return -1;
+  }
+
+  glm::vec3 objspaceIntersection = getPointOnRay(rt, min_t);
+  intersectionPoint = multiplyMV(mesh.transform, glm::vec4(objspaceIntersection, 1.f));
+  normal = glm::normalize(multiplyMV(mesh.transform, glm::vec4(triangles[min_idx].n, 0.f)));
+  outside = (glm::dot(rt.origin, normal) < 0);
+  return min_t;
 }
