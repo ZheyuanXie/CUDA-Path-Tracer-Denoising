@@ -8,6 +8,7 @@ CUDA Path Tracer
 
 ## Introduction
 ![path tracer demo](img/banner.png)
+
 This is a CUDA-based path tracer capable of rendering globally-illuminated images very quickly.
 
 ## Features
@@ -45,7 +46,7 @@ Anti-Aliasing is achieved by randomly jittering ray within the pixel and average
 Camera motion blur is achieved by randomly jittering tay along the direction of motion.
 
 | Static Camera | Rightward Motion | Forward Motion |
-|--|--|--|--|
+|--|--|--|
 |![](img/speculer.png) | ![](img/motion_blur_right.png) | ![](img/motion_blur_forward.png) |
 
 ## Optimization
