@@ -65,7 +65,7 @@ We compare rendering performance with different optimization methods enabled.
  - SC+IC+CF = Three optimizations combined
  - ALL = All Optimization
 
-For a basic scene consists of a cornell box and four primitive shapes (spheres and boxes). Counterintuitively, the render time is minimized with no optimization.
+For a basic scene consists of a cornell box and four primitive shapes (spheres and boxes). Counterintuitively, the render time is minimized with no optimization. The probable cause is the kernel launch overhead for sorting and reduction.
 
 ![](img/perf_basic.png)
 
@@ -83,6 +83,6 @@ For a more complex scene consists of a cornell box and a Stanford bunny, optimiz
 
 
 ## Reference
- - [PBRT] Physically Based Rendering, Second Edition: From Theory To Implementation. Pharr, Matt and Humphreys, Greg. 2010.
+ - Physically Based Rendering, Third Edition: From Theory To Implementation. Pharr, Matt and Humphreys, Greg.
  - Project 3 Recitation - Hannah ([link](https://docs.google.com/presentation/d/1bFtutDe9POZDPiqD9npeOEOWh783xHy4xf2AdJt-pEI/edit?usp=sharing))
  - Most Efficient AABB vs Ray Collision Algorithms. ([link](https://gamedev.stackexchange.com/questions/18436/most-efficient-aabb-vs-ray-collision-algorithms))
