@@ -22,7 +22,7 @@ The path tracer loads arbitrary mesh object from .obj files using [tinyObj](http
 Refraction with Frensel effects using Schlick's approximation.
 
 | Perfect Speculer | Transmissive | Diffussive |
-|--|--|--|--|
+|--|--|--|
 |![perfect speculer](img/speculer.png) | ![refractive](img/transmissive.png) | ![pure diffusive](img/diffusive.png) |
 
 ### 3 Physically-Based Depth-of-Field
@@ -36,12 +36,14 @@ The images below shows three renderings of one scene. The camera is focused at t
 
 ### 4 Stochastic Sampled Antialiasing
 Anti-Aliasing is achieved by randomly jittering ray within the pixel and average the results of multiple rays.
+
 | Antialiasing OFF | Antialiasing ON|
 |--|--|
 |![](img/aa_off.png) | ![](img/aa_on.png) |
 
 ### 5 Camera Motion Blur
 Camera motion blur is achieved by randomly jittering tay along the direction of motion.
+
 | Static Camera | Rightward Motion | Forward Motion |
 |--|--|--|--|
 |![](img/speculer.png) | ![](img/motion_blur_right.png) | ![](img/motion_blur_forward.png) |
