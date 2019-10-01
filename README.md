@@ -43,7 +43,7 @@ Anti-Aliasing is achieved by randomly jittering ray within the pixel and average
 |![](img/aa_off.png) | ![](img/aa_on.png) |
 
 ### 5 Camera Motion Blur
-Camera motion blur is achieved by randomly jittering tay along the direction of motion.
+Camera motion blur is achieved by randomly jittering rays along the direction of motion.
 
 | Static Camera | Rightward Motion | Forward Motion |
 |--|--|--|
