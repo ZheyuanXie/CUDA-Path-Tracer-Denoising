@@ -22,6 +22,7 @@ glm::vec3 ogLookAt; // for recentering the camera
 Scene *scene;
 RenderState *renderState;
 int iteration;
+int frame = 0;
 
 int width;
 int height;
@@ -124,25 +125,26 @@ void runCuda() {
 
     if (iteration == 0) {
         pathtraceFree();
+        denoiseFree();
+
         pathtraceInit(scene);
+        denoiseInit(scene);
+
+        frame++;
     }
 
     if (iteration < renderState->iterations) {
-        uchar4 *pbo_dptr = NULL;
         iteration++;
+        uchar4 *pbo_dptr = NULL;
         cudaGLMapBufferObject((void**)&pbo_dptr, pbo);
 
         // execute the kernel
-        int frame = 0;
         pathtrace(pbo_dptr, frame, iteration);
 
         // unmap buffer object
         cudaGLUnmapBufferObject(pbo);
     } else {
-        saveImage();
-        pathtraceFree();
-        cudaDeviceReset();
-        exit(EXIT_SUCCESS);
+        iteration = 0;
     }
 }
 

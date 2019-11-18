@@ -19,6 +19,7 @@
 #include "pathtrace.h"
 #include "utilities.h"
 #include "scene.h"
+#include "denoise.h"
 
 using namespace std;
 
@@ -28,6 +29,7 @@ using namespace std;
 
 extern Scene* scene;
 extern int iteration;
+extern int frame;
 
 extern int width;
 extern int height;

@@ -27,25 +27,37 @@ void initTextures() {
     glBindTexture(GL_TEXTURE_2D, displayImage);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_BGRA, GL_UNSIGNED_BYTE, NULL);
+    glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA8, width * 2, height, 0, GL_BGRA, GL_UNSIGNED_BYTE, NULL);
 }
 
 void initVAO(void) {
     GLfloat vertices[] = {
+        // left display
         -1.0f, -1.0f,
+        0.0f, -1.0f,
+        0.0f,  1.0f,
+        -1.0f,  1.0f,
+        // right display
+        0.0f, -1.0f,
         1.0f, -1.0f,
         1.0f,  1.0f,
-        -1.0f,  1.0f,
+        0.0f,  1.0f,
     };
 
     GLfloat texcoords[] = {
-        1.0f, 1.0f,
+        // left display
+        0.5f, 1.0f,
         0.0f, 1.0f,
         0.0f, 0.0f,
+        0.5f, 0.0f,
+        // right display
+        1.0f, 1.0f,
+        0.5f, 1.0f,
+        0.5f, 0.0f,
         1.0f, 0.0f
     };
 
-    GLushort indices[] = { 0, 1, 3, 3, 1, 2 };
+    GLushort indices[] = { 0, 1, 3, 3, 1, 2, 4, 5, 7, 7, 5, 6 };
 
     GLuint vertexBufferObjID[3];
     glGenBuffers(3, vertexBufferObjID);
@@ -112,7 +124,7 @@ void initCuda() {
 
 void initPBO() {
     // set up vertex data parameter
-    int num_texels = width * height;
+    int num_texels = width * 2 * height;
     int num_values = num_texels * 4;
     int size_tex_data = sizeof(GLubyte) * num_values;
 
@@ -139,7 +151,7 @@ bool init() {
         exit(EXIT_FAILURE);
     }
 
-    window = glfwCreateWindow(width, height, "CIS 565 Path Tracer", NULL, NULL);
+    window = glfwCreateWindow(width * 2, height, "CUDA Path Tracer", NULL, NULL);
     if (!window) {
         glfwTerminate();
         return false;
@@ -173,16 +185,16 @@ void mainLoop() {
         glfwPollEvents();
         runCuda();
 
-        string title = "CIS565 Path Tracer | " + utilityCore::convertIntToString(iteration) + " Iterations";
+        string title = "CUDA Path Tracer | " + utilityCore::convertIntToString(frame) + " Frames " + utilityCore::convertIntToString(iteration) + " Iterations ";
         glfwSetWindowTitle(window, title.c_str());
 
         glBindBuffer(GL_PIXEL_UNPACK_BUFFER, pbo);
         glBindTexture(GL_TEXTURE_2D, displayImage);
-        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width * 2, height, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
         glClear(GL_COLOR_BUFFER_BIT);
 
         // VAO, shader program, and texture already bound
-        glDrawElements(GL_TRIANGLES, 6,  GL_UNSIGNED_SHORT, 0);
+        glDrawElements(GL_TRIANGLES, 12,  GL_UNSIGNED_SHORT, 0);
         glfwSwapBuffers(window);
     }
     glfwDestroyWindow(window);
