@@ -34,6 +34,18 @@ extern int frame;
 extern int width;
 extern int height;
 
+extern bool ui_run;
+extern bool ui_reset_denoiser;
+extern float ui_variance;
+extern int ui_atrous_nlevel;
+extern bool ui_accumulate;
+extern int ui_history_level;
+extern bool ui_automate_camera;
+extern bool ui_step;
+extern int ui_step_target;
+extern float ui_color_alpha;
+extern float ui_moment_alpha;
+
 void runCuda();
 void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods);
 void mousePositionCallback(GLFWwindow* window, double xpos, double ypos);

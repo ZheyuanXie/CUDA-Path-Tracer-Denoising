@@ -2,6 +2,10 @@
 #include "preview.h"
 #include <cstring>
 
+#include "imgui/imgui.h"
+#include "imgui/imgui_impl_glfw.h"
+#include "imgui/imgui_impl_opengl3.h"
+
 static std::string startTimeString;
 
 // For camera controls
@@ -26,6 +30,19 @@ int frame = 0;
 
 int width;
 int height;
+
+// GUI state
+bool ui_run = true;
+bool ui_reset_denoiser = false;
+float ui_variance = 0.0f;
+int ui_atrous_nlevel = 1;   // How man levels of A-trous filter used in denoising?
+int ui_history_level = 0;   // Which level of A-trous output is sent to history buffer?
+bool ui_accumulate = true;
+bool ui_automate_camera = false;
+bool ui_step = false;
+float ui_color_alpha = 0.2;
+float ui_moment_alpha = 0.2;
+
 
 //-------------------------------
 //-------------MAIN--------------
@@ -100,8 +117,17 @@ void saveImage() {
 }
 
 void runCuda() {
+    if (ui_automate_camera) {
+        Camera &cam = renderState->camera;
+        //zoom = 10.0 + 0.5 * sinf(frame / 10.0f);
+        cam.lookAt.x = sinf(frame / 15.0f);
+        //cam.lookAt.y = 5.0f + cosf(frame / 10.0f);
+        //cam.lookAt.z = 0.0f;
+        camchanged = true;
+    }
+
     if (camchanged) {
-        iteration = 0;
+        //iteration = 0;
         Camera &cam = renderState->camera;
         cameraPosition.x = zoom * sin(phi) * sin(theta);
         cameraPosition.y = zoom * cos(theta);
@@ -122,28 +148,26 @@ void runCuda() {
 
     // Map OpenGL buffer object for writing from CUDA on a single GPU
     // No data is moved (Win & Linux). When mapped to CUDA, OpenGL should not use this buffer
+    if (frame == 0 || ui_reset_denoiser == true) {
+        denoiseFree();
+        denoiseInit(scene);
+        ui_reset_denoiser = false;
+    }
 
     if (iteration == 0) {
         pathtraceFree();
-        denoiseFree();
-
         pathtraceInit(scene);
-        denoiseInit(scene);
-
         frame++;
     }
 
-    if (iteration < renderState->iterations) {
-        iteration++;
+    if (iteration < 1) {
         uchar4 *pbo_dptr = NULL;
         cudaGLMapBufferObject((void**)&pbo_dptr, pbo);
+        pathtrace(pbo_dptr, frame, ++iteration);        // execute the kernel
+        cudaGLUnmapBufferObject(pbo);                   // unmap buffer object
+    }
 
-        // execute the kernel
-        pathtrace(pbo_dptr, frame, iteration);
-
-        // unmap buffer object
-        cudaGLUnmapBufferObject(pbo);
-    } else {
+    if (iteration == 1) {
         iteration = 0;
     }
 }
@@ -169,6 +193,7 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
 }
 
 void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
+  if (ImGui::GetIO().WantCaptureMouse) return;
   leftMousePressed = (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS);
   rightMousePressed = (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS);
   middleMousePressed = (button == GLFW_MOUSE_BUTTON_MIDDLE && action == GLFW_PRESS);

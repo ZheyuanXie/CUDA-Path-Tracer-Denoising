@@ -3,6 +3,12 @@
 #include "main.h"
 #include "preview.h"
 
+#include "imgui/imgui.h"
+#include "imgui/imgui_impl_glfw.h"
+#include "imgui/imgui_impl_opengl3.h"
+
+#define IMGUI_IMPL_OPENGL_LOADER_GLEW
+
 GLuint positionLocation = 0;
 GLuint texcoordsLocation = 1;
 GLuint pbo;
@@ -150,6 +156,9 @@ bool init() {
     if (!glfwInit()) {
         exit(EXIT_FAILURE);
     }
+    const char* glsl_version = "#version 130";
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
 
     window = glfwCreateWindow(width * 2, height, "CUDA Path Tracer", NULL, NULL);
     if (!window) {
@@ -160,6 +169,7 @@ bool init() {
     glfwSetKeyCallback(window, keyCallback);
     glfwSetCursorPosCallback(window, mousePositionCallback);
     glfwSetMouseButtonCallback(window, mouseButtonCallback);
+    glfwSwapInterval(1); // Enable vsync
 
     // Set up GL context
     glewExperimental = GL_TRUE;
@@ -177,26 +187,102 @@ bool init() {
     glUseProgram(passthroughProgram);
     glActiveTexture(GL_TEXTURE0);
 
+    {
+
+        // Setup Dear ImGui context
+        IMGUI_CHECKVERSION();
+        ImGui::CreateContext();
+        ImGuiIO& io = ImGui::GetIO();
+
+        // Setup Dear ImGui style
+        ImGui::StyleColorsClassic();
+
+        // Setup Platform/Renderer bindings
+        ImGui_ImplGlfw_InitForOpenGL(window, true);
+        ImGui_ImplOpenGL3_Init(glsl_version);
+    }
+
     return true;
 }
 
 void mainLoop() {
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
-        runCuda();
 
-        string title = "CUDA Path Tracer | " + utilityCore::convertIntToString(frame) + " Frames " + utilityCore::convertIntToString(iteration) + " Iterations ";
-        glfwSetWindowTitle(window, title.c_str());
+        // Path trace 1 frame
+        {
+            if (ui_run || ui_step) {
+                runCuda();
+                if (ui_step) {
+                    ui_step = false;
+                }
+            }
+            string title = "CUDA Path Tracer | Frame " + utilityCore::convertIntToString(frame);
+            glfwSetWindowTitle(window, title.c_str());
+            glBindBuffer(GL_PIXEL_UNPACK_BUFFER, pbo);
+            glBindTexture(GL_TEXTURE_2D, displayImage);
+            glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width * 2, height, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+            glClear(GL_COLOR_BUFFER_BIT);
+            glDrawElements(GL_TRIANGLES, 12,  GL_UNSIGNED_SHORT, 0);
+        }
 
-        glBindBuffer(GL_PIXEL_UNPACK_BUFFER, pbo);
-        glBindTexture(GL_TEXTURE_2D, displayImage);
-        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width * 2, height, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-        glClear(GL_COLOR_BUFFER_BIT);
+        // Dear imgui new frame
+        {
+            glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+            ImGui_ImplOpenGL3_NewFrame();
+            ImGui_ImplGlfw_NewFrame();
+            ImGui::NewFrame();
+        }
 
-        // VAO, shader program, and texture already bound
-        glDrawElements(GL_TRIANGLES, 12,  GL_UNSIGNED_SHORT, 0);
+        // Dear imgui define
+        {
+            ImGui::Begin("SVGF Control");
+            ImGui::SetWindowFontScale(2);
+            ImGui::Checkbox("Run", &ui_run);
+            ImGui::SameLine();
+            if (ImGui::Button("Step")) {
+                ui_step = true;
+            }
+            ImGui::Checkbox("Accumulate", &ui_accumulate);
+            ImGui::Checkbox("Automate", &ui_automate_camera);
+            ImGui::SameLine();
+            if (ImGui::Button("Reset Camera")) {
+                scene->resetCamera();
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("Clear")) {
+                ui_reset_denoiser = true;
+            }
+            ImGui::SliderFloat("VAR.", &ui_variance, 0.0f, 1.0f);
+            ImGui::SliderInt("# Lv.", &ui_atrous_nlevel, 1, 10);
+            ImGui::SliderInt("Hist. Lv.", &ui_history_level, 0, ui_atrous_nlevel);
+            ImGui::SliderFloat("C. Alpha", &ui_color_alpha, 0.0f, 1.0f);
+            ImGui::SliderFloat("M. Alpha", &ui_moment_alpha, 0.0f, 1.0f);
+            
+            Camera & cam = scene->state.camera;
+            ImGui::Text("Camera Up: (%.3f, %.3f, %.3f)", cam.up.x, cam.up.y, cam.up.z);
+            ImGui::Text("Camera Right: (%.3f, %.3f, %.3f)", cam.right.x, cam.right.y, cam.right.z);
+            ImGui::Text("Camera View: (%.3f, %.3f, %.3f)", cam.view.x, cam.view.y, cam.view.z);
+            ImGui::End();
+        }
+
+        // Dear imgui render
+        {
+            ImGui::Render();
+            ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+        }
+
+        int display_w, display_h;
+        glfwGetFramebufferSize(window, &display_w, &display_h);
+        glViewport(0, 0, display_w, display_h);
         glfwSwapBuffers(window);
     }
+
+    // Cleanup
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
+
     glfwDestroyWindow(window);
     glfwTerminate();
 }

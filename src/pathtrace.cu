@@ -60,8 +60,8 @@ struct material_id_comparator {
 };
 
 __host__ __device__
-thrust::default_random_engine makeSeededRandomEngine(int iter, int index, int depth) {
-    int h = utilhash((1 << 31) | (depth << 22) | iter) ^ utilhash(index);
+thrust::default_random_engine makeSeededRandomEngine(int frame, int iter, int index, int depth) {
+    int h = utilhash((1 << 31) | (depth << 22) | (frame << 13) | iter) ^ utilhash(index);
     return thrust::default_random_engine(h);
 }
 
@@ -182,7 +182,7 @@ __global__ void generateRayFromCamera(Camera cam, int iter, int traceDepth, Path
     segment.ray.origin = cam.position;
     segment.color = glm::vec3(1.0f, 1.0f, 1.0f);
 
-    thrust::default_random_engine rng = makeSeededRandomEngine(iter, index, 0);
+    thrust::default_random_engine rng = makeSeededRandomEngine(0, iter, index, 0);
     thrust::uniform_real_distribution<float> u01(0, 1);
 
     // motion blur
@@ -306,7 +306,7 @@ __global__ void shadeRealMaterial(int iter, int depth, int frame, int num_paths,
     if (intersection.t > 0.0f) { // if the intersection exists...
 
       // Set up the RNG
-      thrust::default_random_engine rng = makeSeededRandomEngine(iter, idx, depth);
+      thrust::default_random_engine rng = makeSeededRandomEngine(frame + 100, iter, idx, depth);
 
       Material material = materials[intersection.materialId];
       glm::vec3 materialColor = material.color;
