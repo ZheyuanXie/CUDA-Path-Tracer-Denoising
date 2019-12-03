@@ -31,14 +31,21 @@ int frame = 0;
 int width;
 int height;
 
+float camera_tx;
+float camera_ty;
+float camera_tz;
+
 // GUI state
 bool ui_run = true;
 bool ui_reset_denoiser = false;
-float ui_variance = 0.0f;
+float ui_variance = 0.001f;
 int ui_atrous_nlevel = 1;   // How man levels of A-trous filter used in denoising?
 int ui_history_level = 0;   // Which level of A-trous output is sent to history buffer?
 bool ui_accumulate = true;
 bool ui_automate_camera = false;
+float ui_camera_speed_x = 0.1;
+float ui_camera_speed_y = 0.0;
+float ui_camera_speed_z = 0.0;
 bool ui_step = false;
 float ui_color_alpha = 0.2;
 float ui_moment_alpha = 0.2;
@@ -117,12 +124,15 @@ void saveImage() {
 }
 
 void runCuda() {
+    // camera automatic motion
     if (ui_automate_camera) {
         Camera &cam = renderState->camera;
-        //zoom = 10.0 + 0.5 * sinf(frame / 10.0f);
-        cam.lookAt.x = sinf(frame / 15.0f);
-        //cam.lookAt.y = 5.0f + cosf(frame / 10.0f);
-        //cam.lookAt.z = 0.0f;
+        camera_tx += ui_camera_speed_x;
+        camera_ty += ui_camera_speed_y;
+        camera_tz += ui_camera_speed_z;
+        cam.lookAt.x = sinf(camera_tx);
+        cam.lookAt.y = 5.0f + sinf(camera_ty);
+        cam.lookAt.z = 1.5f * sinf(camera_tz);
         camchanged = true;
     }
 
@@ -157,7 +167,7 @@ void runCuda() {
     if (iteration == 0) {
         pathtraceFree();
         pathtraceInit(scene);
-        frame++;
+        if (frame++ == 1000) frame = 0;
     }
 
     if (iteration < 1) {
@@ -201,7 +211,7 @@ void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
 
 void mousePositionCallback(GLFWwindow* window, double xpos, double ypos) {
   if (xpos == lastX || ypos == lastY) return; // otherwise, clicking back into window causes re-start
-  if (leftMousePressed) {
+  if (middleMousePressed) {
     // compute new camera parameters
     phi -= (xpos - lastX) / width;
     theta -= (ypos - lastY) / height;
@@ -213,7 +223,7 @@ void mousePositionCallback(GLFWwindow* window, double xpos, double ypos) {
     zoom = std::fmax(0.1f, zoom);
     camchanged = true;
   }
-  else if (middleMousePressed) {
+  else if (leftMousePressed) {
     renderState = &scene->state;
     Camera &cam = renderState->camera;
     glm::vec3 forward = cam.view;

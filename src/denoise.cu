@@ -32,26 +32,28 @@ void denoiseInit(Scene *scene) {
     const Camera &cam = hst_scene->state.camera;
     const int pixelcount = cam.resolution.x * cam.resolution.y;
 
+    // temporary ping-pong buffers
     cudaMalloc(&dev_temp[0], pixelcount * sizeof(glm::vec3));
-    cudaMemset(dev_temp[0], 0, pixelcount * sizeof(glm::vec3));
-
     cudaMalloc(&dev_temp[1], pixelcount * sizeof(glm::vec3));
-    cudaMemset(dev_temp[1], 0, pixelcount * sizeof(glm::vec3));
     
-    // allocate memory for history buffers
+    // history length
     cudaMalloc(&dev_history_length, pixelcount * sizeof(int));
     cudaMemset(dev_history_length, 0, pixelcount * sizeof(int));
 
+    // moment history and moment accumulation (history + current -> accumulation)
     cudaMalloc(&dev_moment_history, pixelcount * sizeof(glm::vec2));
     cudaMemset(dev_moment_history, 0, pixelcount * sizeof(glm::vec2));
     cudaMalloc(&dev_moment_acc, pixelcount * sizeof(glm::vec2));
     cudaMemset(dev_moment_acc, 0, pixelcount * sizeof(glm::vec2));
 
+    // color history and color accumulation (history + current -> accumulation)
     cudaMalloc(&dev_color_history, pixelcount * sizeof(glm::vec3));
     cudaMalloc(&dev_color_acc, pixelcount * sizeof(glm::vec3));
 
+    // store gbuffer from the previous frame
     cudaMalloc(&dev_gbuffer_prev, pixelcount * sizeof(GBufferTexel));
 
+    // per pixel variance
     cudaMalloc(&dev_variance, pixelcount * sizeof(float));
     cudaMemset(dev_variance, 0, pixelcount * sizeof(float));
 }
@@ -59,70 +61,110 @@ void denoiseInit(Scene *scene) {
 void denoiseFree() {
     cudaFree(dev_temp[0]);
     cudaFree(dev_temp[1]);
+    cudaFree(dev_history_length);
+    cudaFree(dev_moment_acc);
+    cudaFree(dev_color_acc);
     cudaFree(dev_moment_history);
     cudaFree(dev_color_history);
     cudaFree(dev_gbuffer_prev);
     cudaFree(dev_variance);
 }
 
-__global__ void initializeMoment(glm::vec2 res, glm::vec2 * dev_moment_history) {
-    int x = (blockIdx.x * blockDim.x) + threadIdx.x;
-    int y = (blockIdx.y * blockDim.y) + threadIdx.y;
-
-    if (x < res.x && y < res.y) {
-        int p = x + y * res.x;
-    }
-}
-
 // A-Trous Filter
-__global__ void ATrousFilter(glm::vec3 * dev_input, glm::vec3 * dev_output, GBufferTexel * gBuffer, glm::ivec2 res, int level,
-                             float variance, float sigma_n, float sigma_x)
+__global__ void ATrousFilter(glm::vec3 * colorin, glm::vec3 * colorout, float * variance,
+                             GBufferTexel * gBuffer, glm::ivec2 res, int level,
+                             float sigma_c, float sigma_n, float sigma_x)
 {
-    int x = (blockIdx.x * blockDim.x) + threadIdx.x;
-    int y = (blockIdx.y * blockDim.y) + threadIdx.y;
-
-    // a-trous kernel
+    // 5x5 A-Trous kernel
     float h[25] = { 1.0 / 256.0, 1.0 / 64.0, 3.0 / 128.0, 1.0 / 64.0, 1.0 / 256.0,
                     1.0 / 64.0, 1.0 / 16.0, 3.0 / 32.0, 1.0 / 16.0, 1.0 / 64.0,
                     3.0 / 128.0, 3.0 / 32.0, 9.0 / 64.0, 3.0 / 32.0, 3.0 / 128.0,
                     1.0 / 64.0, 1.0 / 16.0, 3.0 / 32.0, 1.0 / 16.0, 1.0 / 64.0,
                     1.0 / 256.0, 1.0 / 64.0, 3.0 / 128.0, 1.0 / 64.0, 1.0 / 256.0 };
+    
+    // 3x3 Gaussian kernel
+    float gaussian[9] = { 1.0 / 16.0, 1.0 / 8.0, 1.0 / 16.0,
+                          1.0 / 8.0,  1.0 / 4.0, 1.0 / 8.0,
+                          1.0 / 16.0, 1.0 / 8.0, 1.0 / 16.0 };
+
+    int x = (blockIdx.x * blockDim.x) + threadIdx.x;
+    int y = (blockIdx.y * blockDim.y) + threadIdx.y;
 
     if (x < res.x && y < res.y) {
         int p = x + y * res.x;
         int step = 1 << level;
-        float weights = 0;
-        float weights_squared = 0;
-        glm::vec3 color = glm::vec3(0.0f);
-        //float variance = 0.0f;
+        float weights_sum = 0;
+        float weights_squared_sum = 0;
+        glm::vec3 color_sum = glm::vec3(0.0f);
+        float variance_sum = 0.0f;
+
+        
+        float var = max(variance[p], 0.0f);
+        // perform 3x3 gaussian blur on variance
+        {
+            float sum = 0.0f;
+            float sumw = 0.0f;
+            glm::ivec2 g[9] = { glm::ivec2(-1, -1), glm::ivec2(0, -1), glm::ivec2(1, -1),
+                               glm::ivec2(-1, 0),  glm::ivec2(0, 0),  glm::ivec2(1, 0),
+                               glm::ivec2(-1, 1),  glm::ivec2(0, 1),  glm::ivec2(1, 1) };
+            for (int sampleIdx = 0; sampleIdx < 9; sampleIdx++) {
+                glm::ivec2 loc = glm::ivec2(x, y) + g[sampleIdx];
+                if (loc.x >= 0 && loc.y >= 0 && loc.x < res.x && loc.y < res.y) {
+                    sum += gaussian[sampleIdx] + variance[loc.x + loc.y * res.x];
+                    sumw += gaussian[sampleIdx];
+                }
+            }
+            var = max(sum / sumw, 0.0f);
+        }
+
         for (int i = -2; i <= 2; i++) {
             for (int j = -2; j <= 2; j++) {
                 int xq = x + step * i;
                 int yq = y + step * j;
-                int q = xq + yq * res.x;
-                if (xq >= 0 && xq < res.x && yq >= 0 && yq < res.y) {
+                if (xq >= 0 && xq < res.x && yq >= 0 && yq < res.y) {                    
+                    int q = xq + yq * res.x;
+
+                    // Luminance
+                    float lp = 0.2126 * colorin[p].x + 0.7152 * colorin[p].y + 0.0722 * colorin[p].z;
+                    float lq = 0.2126 * colorin[q].x + 0.7152 * colorin[q].y + 0.0722 * colorin[q].z;
+
+                    // Position
+                    glm::vec3 pp = gBuffer[p].position;
+                    glm::vec3 pq = gBuffer[q].position;
+
+                    // Normal
+                    glm::vec3 np = gBuffer[p].normal;
+                    glm::vec3 nq = gBuffer[q].normal;
+                    
+                    // Edge-stopping weights
+                    float wl = min(1.0f, expf(-glm::distance(lp, lq) / (sqrt(var) * sigma_c + 1e-6)));
+                    float wn = min(1.0f, expf(-glm::distance(np, nq) / sigma_n));
+                    float wx = min(1.0f, expf(-glm::distance(pp, pq) / sigma_x));
+
+                    // filter weights
                     int k = (2 + i) + (2 + j) * 5;
-
-                    float wrt = 1.0f, wn = 1.0f, wx = 1.0f;
-
-                    float lp = 0.2126 * dev_input[p].x + 0.7152 * dev_input[p].y + 0.0722 * dev_input[p].z;
-                    float lq = 0.2126 * dev_input[q].x + 0.7152 * dev_input[q].y + 0.0722 * dev_input[q].z;
-
-                    wrt = exp(-abs(lp - lq) / (variance + 1e-6));
-                    wn = exp(-distance(gBuffer[p].normal, gBuffer[q].normal) / sigma_n);
-                    wx = exp(-distance(gBuffer[p].position, gBuffer[q].position) / sigma_x);
-
-                    float weight = h[k] * wrt * wn * wx;
-                    color += (dev_input[q] * weight);
-                    //variance += (dev_variance[q] * weight * weight);
-                    weights += weight;
-                    weights_squared += weight * weight;
+                    float weight = abs(h[k] * wl *wn * wx);
+                    weights_sum += weight;
+                    weights_squared_sum += weight * weight;
+                    color_sum += (colorin[q] * weight);
+                    variance_sum += (variance[q] * weight * weight);
                 }
             }
         }
 
-        dev_output[p] = color / (float)weights;
-        //dev_variance[p] = variance / (float)weights_squared;
+        // update color and variance
+        if (weights_sum > 10e-6) {
+            colorout[p] = color_sum / weights_sum;
+            variance[p] = variance_sum / weights_squared_sum;
+        }
+        else {
+            colorout[p] = colorin[p];
+        }
+
+        // increase luminance after level-2 (TODO)
+        //if (level >= 2) {
+        //    colorout[p] *= 1.1;
+        //}
     }
 }
 
@@ -170,43 +212,52 @@ __global__ void BackProjection(float * variacne_out, int * history_length, glm::
             float floory = floor(prevy);
             float fracx = prevx - floorx;
             float fracy = prevy - floory;
+            
+            bool valid = (floorx >= 0 && floory >= 0 && floorx < res.x && floory < res.y);
+
+            // 2x2 tap bilinear filter
             glm::ivec2 offset[4] = { glm::ivec2(0,0), glm::ivec2(1,0), glm::ivec2(0,1), glm::ivec2(1,1) };
             
-            bool valid = false;
-            for (int sampleIdx = 0; sampleIdx < 4; sampleIdx++) {
-                glm::ivec2 loc = glm::ivec2(floorx, floory) + offset[sampleIdx];
-                v[sampleIdx] = isReprjValid(res, glm::ivec2(x, y), loc, current_gbuffer, prev_gbuffer);
-                valid = valid || v[sampleIdx];
-            }
-
-            float sumw = 0.0f;
-
-            float w[4] = {
-                (1 - fracx) * (1 - fracy),
-                fracx * (1 - fracy),
-                (1 - fracx) * fracy,
-                fracx * fracy
-            };
-
-            if (valid) {
-                glm::vec3 prevColor = glm::vec3(0.0f);
-                glm::vec2 prevMoments = glm::vec2(0.0f);
-                float prevHistoryLength = 0;
+            // check validity
+            {
                 for (int sampleIdx = 0; sampleIdx < 4; sampleIdx++) {
                     glm::ivec2 loc = glm::ivec2(floorx, floory) + offset[sampleIdx];
-                    int locq = loc.x + loc.y * res.x;
-                    if (v[sampleIdx]) {
-                        prevColor += w[sampleIdx] * color_history[locq];
-                        prevMoments += w[sampleIdx] * moment_history[locq];
-                        prevHistoryLength += w[sampleIdx] * history_length[locq];
-                        sumw += w[sampleIdx];
-                    }
+                    v[sampleIdx] = isReprjValid(res, glm::ivec2(x, y), loc, current_gbuffer, prev_gbuffer);
+                    valid = valid && v[sampleIdx];
                 }
+            }
 
-                valid = (sumw >= 0.01);
-                prevColor = valid ? prevColor / sumw : glm::vec3(0.0f);
-                prevMoments = valid ? prevMoments / sumw : glm::vec2(0.0f);
-                prevHistoryLength = valid ? prevHistoryLength / sumw : 0.0f;
+            if (valid) {
+                int q = floorx + floory * res.x;
+                glm::vec3 prevColor = color_history[q];
+                glm::vec2 prevMoments = moment_history[q];
+                float prevHistoryLength = history_length[q];
+
+                // interpolate?
+                {
+                    prevColor = glm::vec3(0.0f);
+                    prevMoments = glm::vec2(0.0f);
+                    prevHistoryLength = 0.0f;
+                    float sumw = 0.0f;
+                    float w[4] = { (1 - fracx) * (1 - fracy),
+                                   fracx * (1 - fracy),
+                                   (1 - fracx) * fracy,
+                                   fracx * fracy };
+                    for (int sampleIdx = 0; sampleIdx < 4; sampleIdx++) {
+                        glm::ivec2 loc = glm::ivec2(floorx, floory) + offset[sampleIdx];
+                        int locq = loc.x + loc.y * res.x;
+                        if (v[sampleIdx]) {
+                            prevColor += w[sampleIdx] * color_history[locq];
+                            prevMoments += w[sampleIdx] * moment_history[locq];
+                            prevHistoryLength += w[sampleIdx] * history_length[locq];
+                            sumw += w[sampleIdx];
+                        }
+                    }
+                    valid = (sumw >= 0.01);
+                    prevColor = valid ? prevColor / sumw : glm::vec3(0.0f);
+                    prevMoments = valid ? prevMoments / sumw : glm::vec2(0.0f);
+                    prevHistoryLength = valid ? prevHistoryLength / sumw : 0.0f;
+                }
 
                 // calculate alpha values that controls fade
                 float color_alpha = max(1.0f / (float)(N + 1), color_alpha_min);
@@ -270,7 +321,7 @@ void denoise(int iter, glm::vec3 * input, glm::vec3 * output, GBufferTexel * gbu
     for (int level = 1; level <= ui_atrous_nlevel; level++) {
         glm::vec3* src = (level == 1) ? dev_color_acc : dev_temp[level % 2];
         glm::vec3* dst = (level == ui_atrous_nlevel) ? output : dev_temp[(level + 1) % 2];
-        ATrousFilter <<<blocksPerGrid2d, blockSize2d>>>(src, dst, gbuffer, cam.resolution, level, ui_variance, 1.f, 1.f);
+        ATrousFilter <<<blocksPerGrid2d, blockSize2d>>>(src, dst, dev_variance, gbuffer, cam.resolution, level, ui_variance, 1.f, 1.f);
         if (level == ui_history_level) cudaMemcpy(dev_color_history, dst, pixelcount * sizeof(glm::vec3), cudaMemcpyDeviceToDevice);
     }
 

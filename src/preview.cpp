@@ -236,33 +236,44 @@ void mainLoop() {
 
         // Dear imgui define
         {
-            ImGui::Begin("SVGF Control");
+            ImGui::Begin("Console");
             ImGui::SetWindowFontScale(2);
             ImGui::Checkbox("Run", &ui_run);
             ImGui::SameLine();
             if (ImGui::Button("Step")) {
                 ui_step = true;
             }
-            ImGui::Checkbox("Accumulate", &ui_accumulate);
-            ImGui::Checkbox("Automate", &ui_automate_camera);
-            ImGui::SameLine();
-            if (ImGui::Button("Reset Camera")) {
-                scene->resetCamera();
-            }
             ImGui::SameLine();
             if (ImGui::Button("Clear")) {
                 ui_reset_denoiser = true;
             }
-            ImGui::SliderFloat("VAR.", &ui_variance, 0.0f, 1.0f);
-            ImGui::SliderInt("# Lv.", &ui_atrous_nlevel, 1, 10);
-            ImGui::SliderInt("Hist. Lv.", &ui_history_level, 0, ui_atrous_nlevel);
-            ImGui::SliderFloat("C. Alpha", &ui_color_alpha, 0.0f, 1.0f);
-            ImGui::SliderFloat("M. Alpha", &ui_moment_alpha, 0.0f, 1.0f);
+            ImGui::Checkbox("Accumulate", &ui_accumulate);
             
-            Camera & cam = scene->state.camera;
-            ImGui::Text("Camera Up: (%.3f, %.3f, %.3f)", cam.up.x, cam.up.y, cam.up.z);
-            ImGui::Text("Camera Right: (%.3f, %.3f, %.3f)", cam.right.x, cam.right.y, cam.right.z);
-            ImGui::Text("Camera View: (%.3f, %.3f, %.3f)", cam.view.x, cam.view.y, cam.view.z);
+            if (ImGui::CollapsingHeader("Camera"))
+            {
+                Camera & cam = scene->state.camera;
+                ImGui::Checkbox("Automate", &ui_automate_camera);
+                ImGui::SameLine();
+                if (ImGui::Button("Reset")) {
+                    scene->resetCamera();
+                }
+                ImGui::SliderFloat("Spd. X", &ui_camera_speed_x, 0.0f, 0.5f);
+                ImGui::SliderFloat("Spd. Y", &ui_camera_speed_y, 0.0f, 0.5f);
+                ImGui::SliderFloat("Spd. Z", &ui_camera_speed_z, 0.0f, 0.5f);
+                ImGui::Text("Camera Up: (%.3f, %.3f, %.3f)", cam.up.x, cam.up.y, cam.up.z);
+                ImGui::Text("Camera Right: (%.3f, %.3f, %.3f)", cam.right.x, cam.right.y, cam.right.z);
+                ImGui::Text("Camera View: (%.3f, %.3f, %.3f)", cam.view.x, cam.view.y, cam.view.z);
+            }
+
+            if (ImGui::CollapsingHeader("SVGF")) {
+                ImGui::SliderFloat("C. Alpha", &ui_color_alpha, 0.0f, 1.0f);
+                ImGui::SliderFloat("M. Alpha", &ui_moment_alpha, 0.0f, 1.0f);
+                ImGui::Separator();
+                ImGui::SliderFloat("Sigma C.", &ui_variance, 0.0f, 1.0f);
+                ImGui::SliderInt("# Lv.", &ui_atrous_nlevel, 1, 10);
+                ImGui::SliderInt("Hist. Lv.", &ui_history_level, 0, ui_atrous_nlevel);
+            } 
+            
             ImGui::End();
         }
 

@@ -101,6 +101,12 @@ void scatterRay(
     pathSegment.color *= m.specular.color;
   } else {                                                // Diffusive
     pathSegment.ray.direction = calculateRandomDirectionInHemisphere(normal, rng);
+
+    // fake direct light
+    if (pathSegment.remainingBounces == 2) {
+        pathSegment.ray.direction = glm::normalize(glm::vec3(0.0f, 10.0f, 0.0f) - (intersect + 0.0001f * normal));
+        pathSegment.directLight = true;
+    }
   }
 
   pathSegment.color *= m.color;

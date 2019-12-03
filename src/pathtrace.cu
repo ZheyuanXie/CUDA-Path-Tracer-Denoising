@@ -299,12 +299,8 @@ __global__ void shadeRealMaterial(int iter, int depth, int frame, int num_paths,
     ShadeableIntersection intersection = shadeableIntersections[idx];
     PathSegment &pathSegment = pathSegments[idx];
 
-#ifndef STREAM_COMPACTION
-    if (pathSegment.remainingBounces <= 0) return;
-#endif // !STREAM_COMPACTION
-
+    if (pathSegment.remainingBounces < 0) return;
     if (intersection.t > 0.0f) { // if the intersection exists...
-
       // Set up the RNG
       thrust::default_random_engine rng = makeSeededRandomEngine(frame + 100, iter, idx, depth);
 
@@ -312,8 +308,14 @@ __global__ void shadeRealMaterial(int iter, int depth, int frame, int num_paths,
       glm::vec3 materialColor = material.color;
 
       if (material.emittance > 0.0f) {  // Hit light (Terminate)
-        pathSegment.color *= (materialColor * material.emittance);
-        pathSegment.remainingBounces = -1;
+        if (pathSegment.directLight) {
+            pathSegment.color *= materialColor * 1.0f;
+            pathSegment.remainingBounces = -1;
+        }
+        else {
+            pathSegment.color *= (materialColor * material.emittance);
+            pathSegment.remainingBounces = -1;
+        }
       }
       else {  // Hit Material (Bounce)
         glm::vec3 intersect = pathSegment.ray.origin + intersection.t * pathSegment.ray.direction;
@@ -419,7 +421,7 @@ void pathtrace(uchar4 *pbo, int frame, int iter) {
         checkCUDAError("shade material");
 
         // termination condition
-        iterationComplete = (depth >= traceDepth);
+        iterationComplete = (depth > traceDepth);
     }
 
     // Assemble this iteration and apply it to the image
