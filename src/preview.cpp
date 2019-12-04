@@ -269,10 +269,18 @@ void mainLoop() {
                 ImGui::SliderFloat("C. Alpha", &ui_color_alpha, 0.0f, 1.0f);
                 ImGui::SliderFloat("M. Alpha", &ui_moment_alpha, 0.0f, 1.0f);
                 ImGui::Separator();
-                ImGui::SliderFloat("Sigma C.", &ui_variance, 0.0f, 1.0f);
+                ImGui::SliderFloat("Sigma L.", &ui_sigmal, 0.0f, 128.0f);
+                ImGui::SliderFloat("Var. Power", &ui_varpow, 0.5f, 5.0f);
                 ImGui::SliderInt("# Lv.", &ui_atrous_nlevel, 1, 10);
                 ImGui::SliderInt("Hist. Lv.", &ui_history_level, 0, ui_atrous_nlevel);
             } 
+
+            if (ImGui::CollapsingHeader("View")) {
+                const char* listbox_items_left[] = { "1 spp" };
+                ImGui::ListBox("Left View", &ui_left_view_option, listbox_items_left, IM_ARRAYSIZE(listbox_items_left), 3);
+                const char* listbox_items_right[] = { "Filtered", "HistoryLenth", "Variance" };
+                ImGui::ListBox("Right View", &ui_right_view_option, listbox_items_right, IM_ARRAYSIZE(listbox_items_right), 3);
+            }
             
             ImGui::End();
         }

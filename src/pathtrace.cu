@@ -61,7 +61,7 @@ struct material_id_comparator {
 
 __host__ __device__
 thrust::default_random_engine makeSeededRandomEngine(int frame, int iter, int index, int depth) {
-    int h = utilhash((1 << 31) | (depth << 22) | (frame << 13) | iter) ^ utilhash(index);
+    int h = utilhash((1 << 31) | (depth << 27) | (frame << 13) | iter) ^ utilhash(index);
     return thrust::default_random_engine(h);
 }
 
@@ -165,10 +165,6 @@ void pathtraceFree() {
 /**
 * Generate PathSegments with rays from the camera through the screen into the
 * scene, which is the first bounce of rays.
-*
-* Antialiasing - add rays for sub-pixel sampling
-* motion blur - jitter rays "in time"
-* lens effect - jitter ray origin positions based on a lens
 */
 __global__ void generateRayFromCamera(Camera cam, int iter, int traceDepth, PathSegment* pathSegments)
 {
@@ -177,48 +173,36 @@ __global__ void generateRayFromCamera(Camera cam, int iter, int traceDepth, Path
 
 	if (x < cam.resolution.x && y < cam.resolution.y) {
 		int index = x + (y * cam.resolution.x);
+
+        // initial ray
 		PathSegment & segment = pathSegments[index];
-    
-    segment.ray.origin = cam.position;
-    segment.color = glm::vec3(1.0f, 1.0f, 1.0f);
+        segment.ray.origin = cam.position;
+        segment.color = glm::vec3(1.0f);
+        segment.ray.direction = glm::normalize(cam.view
+        - cam.right * cam.pixelLength.x * ((float)x - (float)(cam.resolution.x * 0.5f - 0.5f))
+        - cam.up * cam.pixelLength.y * ((float)y - (float)(cam.resolution.y * 0.5f - 0.5f))
+        );
+        segment.pixelIndex = index;
+        segment.remainingBounces = traceDepth;
 
-    thrust::default_random_engine rng = makeSeededRandomEngine(0, iter, index, 0);
-    thrust::uniform_real_distribution<float> u01(0, 1);
+        // depth of field
+        if (cam.depth_of_field) {
+            thrust::default_random_engine rng = makeSeededRandomEngine(0, iter, index, 0);
+            thrust::uniform_real_distribution<float> u01(0, 1);
 
-    // motion blur
-    thrust::normal_distribution<float> n01(0, 1);
-    float t = abs(n01(rng));
-    glm::vec3 view = cam.view * (1 - t) + (cam.view + cam.motion) * t;
+              // sample point on lens
+              float r = u01(rng) * cam.lens_radius;
+              float theta = u01(rng) * 2 * PI;
+              glm::vec3 p_lens(r * cos(theta), r * sin(theta), 0.0f);
 
-    if (cam.antialiasing) {
-      segment.ray.direction = glm::normalize(view
-        - cam.right * cam.pixelLength.x * ((float)x + u01(rng) - (float)cam.resolution.x * 0.5f)
-        - cam.up * cam.pixelLength.y * ((float)y + u01(rng) - (float)cam.resolution.y * 0.5f)
-      );
-    } else {
-      segment.ray.direction = glm::normalize(view
-        - cam.right * cam.pixelLength.x * ((float)x - (float)cam.resolution.x * 0.5f)
-        - cam.up * cam.pixelLength.y * ((float)y - (float)cam.resolution.y * 0.5f)
-      );
-    }
+              // compute point on plane of focus
+              float ft = cam.focal_distance / glm::abs(segment.ray.direction.z);
+              glm::vec3 p_focus = segment.ray.origin + ft * segment.ray.direction;
 
-    if (cam.depth_of_field) {
-      // sample point on lens
-      float r = u01(rng) * cam.lens_radius;
-      float theta = u01(rng) * 2 * PI;
-      glm::vec3 p_lens(r * cos(theta), r * sin(theta), 0.0f);
-
-      // compute point on plane of focus
-      float ft = cam.focal_distance / glm::abs(segment.ray.direction.z);
-      glm::vec3 p_focus = segment.ray.origin + ft * segment.ray.direction;
-
-      // update ray for effect of lens
-      segment.ray.origin += p_lens;
-      segment.ray.direction = glm::normalize(p_focus - segment.ray.origin);
-    }
-
-		segment.pixelIndex = index;
-		segment.remainingBounces = traceDepth;
+              // update ray for effect of lens
+              segment.ray.origin += p_lens;
+              segment.ray.direction = glm::normalize(p_focus - segment.ray.origin);
+        }
 	}
 }
 
@@ -302,7 +286,7 @@ __global__ void shadeRealMaterial(int iter, int depth, int frame, int num_paths,
     if (pathSegment.remainingBounces < 0) return;
     if (intersection.t > 0.0f) { // if the intersection exists...
       // Set up the RNG
-      thrust::default_random_engine rng = makeSeededRandomEngine(frame + 100, iter, idx, depth);
+      thrust::default_random_engine rng = makeSeededRandomEngine(frame, iter, idx, depth);
 
       Material material = materials[intersection.materialId];
       glm::vec3 materialColor = material.color;

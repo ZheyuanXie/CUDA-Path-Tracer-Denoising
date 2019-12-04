@@ -36,7 +36,7 @@ extern int height;
 
 extern bool ui_run;
 extern bool ui_reset_denoiser;
-extern float ui_variance;
+extern float ui_sigmal;
 extern int ui_atrous_nlevel;
 extern bool ui_accumulate;
 extern int ui_history_level;
@@ -48,6 +48,9 @@ extern bool ui_step;
 extern int ui_step_target;
 extern float ui_color_alpha;
 extern float ui_moment_alpha;
+extern int ui_left_view_option;
+extern int ui_right_view_option;
+extern float ui_varpow;
 
 void runCuda();
 void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods);

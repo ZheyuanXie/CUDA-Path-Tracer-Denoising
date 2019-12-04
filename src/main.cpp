@@ -38,7 +38,7 @@ float camera_tz;
 // GUI state
 bool ui_run = true;
 bool ui_reset_denoiser = false;
-float ui_variance = 0.001f;
+float ui_sigmal = 0.001f;
 int ui_atrous_nlevel = 1;   // How man levels of A-trous filter used in denoising?
 int ui_history_level = 0;   // Which level of A-trous output is sent to history buffer?
 bool ui_accumulate = true;
@@ -49,7 +49,9 @@ float ui_camera_speed_z = 0.0;
 bool ui_step = false;
 float ui_color_alpha = 0.2;
 float ui_moment_alpha = 0.2;
-
+int ui_left_view_option = 0;
+int ui_right_view_option = 0;
+float ui_varpow = 1.0f;
 
 //-------------------------------
 //-------------MAIN--------------
@@ -167,13 +169,12 @@ void runCuda() {
     if (iteration == 0) {
         pathtraceFree();
         pathtraceInit(scene);
-        if (frame++ == 1000) frame = 0;
     }
 
     if (iteration < 1) {
         uchar4 *pbo_dptr = NULL;
         cudaGLMapBufferObject((void**)&pbo_dptr, pbo);
-        pathtrace(pbo_dptr, frame, ++iteration);        // execute the kernel
+        pathtrace(pbo_dptr, frame++, ++iteration);        // execute the kernel
         cudaGLUnmapBufferObject(pbo);                   // unmap buffer object
     }
 
@@ -219,22 +220,28 @@ void mousePositionCallback(GLFWwindow* window, double xpos, double ypos) {
     camchanged = true;
   }
   else if (rightMousePressed) {
-    zoom += (ypos - lastY) / height;
-    zoom = std::fmax(0.1f, zoom);
+    renderState = &scene->state;
+    Camera &cam = renderState->camera;
+    glm::vec3 forward = cam.view;
+    forward.y = 0.0f; 
+    forward = glm::normalize(forward);
+
+    cam.lookAt += (float)(ypos - lastY) * forward * 0.01f;
     camchanged = true;
   }
   else if (leftMousePressed) {
     renderState = &scene->state;
     Camera &cam = renderState->camera;
-    glm::vec3 forward = cam.view;
-    forward.y = 0.0f;
-    forward = glm::normalize(forward);
+    glm::vec3 up = cam.up;
+    up.x = 0.0f;
+    up.z = 0.0f;
+    up = glm::normalize(up);
     glm::vec3 right = cam.right;
     right.y = 0.0f;
     right = glm::normalize(right);
 
     cam.lookAt -= (float) (xpos - lastX) * right * 0.01f;
-    cam.lookAt += (float) (ypos - lastY) * forward * 0.01f;
+    cam.lookAt += (float) (ypos - lastY) * up * 0.01f;
     camchanged = true;
   }
   lastX = xpos;
