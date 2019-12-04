@@ -141,12 +141,12 @@ __global__ void ATrousFilter(glm::vec3 * colorin, glm::vec3 * colorout, float * 
                     
                     // Edge-stopping weights
                     float wl = expf(-glm::distance(lp, lq) / (powf(var, varpow) * sigma_c + 1e-6));
-                    float wn = min(1.0f, expf(-glm::distance(np, nq) / sigma_n));
-                    float wx = min(1.0f, expf(-glm::distance(pp, pq) / sigma_x));
+                    float wn = min(1.0f, expf(-glm::distance(np, nq) / (sigma_n + 1e-6)));
+                    float wx = min(1.0f, expf(-glm::distance(pp, pq) / (sigma_x + 1e-6)));
 
                     // filter weights
                     int k = (2 + i) + (2 + j) * 5;
-                    float weight = abs(h[k] * wl *wn * wx);
+                    float weight = h[k] * wl * wn * wx;
                     weights_sum += weight;
                     weights_squared_sum += weight * weight;
                     color_sum += (colorin[q] * weight);
@@ -174,7 +174,7 @@ __device__ bool isReprjValid(glm::ivec2 res, glm::vec2 curr_coord, glm::vec2 pre
     // reject if the pixel is a different geometry
     if (prev_gbuffer[q].geomId == -1 || prev_gbuffer[q].geomId != curr_gbuffer[p].geomId) return false;
     // reject if the normal deviation is not acceptable
-    if (distance(prev_gbuffer[q].normal, curr_gbuffer[p].normal) > 1.0f) return false;
+    if (distance(prev_gbuffer[q].normal, curr_gbuffer[p].normal) > 1e-1f) return false;
     return true;
 }
 
@@ -359,13 +359,19 @@ void denoise(int iter, glm::vec3 * input, glm::vec3 * output, GBufferTexel * gbu
         DebugView<<<blocksPerGrid2d, blockSize2d >>>(cam.resolution, output, dev_variance, 0.1f);
     }
     else {
-        /* Apply A-Tours filter */
-        if (ui_history_level == 0) cudaMemcpy(dev_color_history, dev_color_acc, pixelcount * sizeof(glm::vec3), cudaMemcpyDeviceToDevice);
-        for (int level = 1; level <= ui_atrous_nlevel; level++) {
-            glm::vec3* src = (level == 1) ? dev_color_acc : dev_temp[level % 2];
-            glm::vec3* dst = (level == ui_atrous_nlevel) ? output : dev_temp[(level + 1) % 2];
-            ATrousFilter << <blocksPerGrid2d, blockSize2d >> > (src, dst, dev_variance, gbuffer, cam.resolution, level, ui_varpow, ui_sigmal, 1.f, 1.f);
-            if (level == ui_history_level) cudaMemcpy(dev_color_history, dst, pixelcount * sizeof(glm::vec3), cudaMemcpyDeviceToDevice);
+        if (ui_atrous_nlevel == 0) {
+            cudaMemcpy(output, dev_color_acc, sizeof(glm::vec3) * pixelcount, cudaMemcpyDeviceToDevice);
+            cudaMemcpy(dev_color_history, dev_color_acc, pixelcount * sizeof(glm::vec3), cudaMemcpyDeviceToDevice);
+        }
+        else {
+            /* Apply A-Tours filter */
+            if (ui_history_level == 0) cudaMemcpy(dev_color_history, dev_color_acc, pixelcount * sizeof(glm::vec3), cudaMemcpyDeviceToDevice);
+            for (int level = 1; level <= ui_atrous_nlevel; level++) {
+                glm::vec3* src = (level == 1) ? dev_color_acc : dev_temp[level % 2];
+                glm::vec3* dst = (level == ui_atrous_nlevel) ? output : dev_temp[(level + 1) % 2];
+                ATrousFilter << <blocksPerGrid2d, blockSize2d >> > (src, dst, dev_variance, gbuffer, cam.resolution, level, ui_varpow, ui_sigmal, ui_sigman, ui_sigmax);
+                if (level == ui_history_level) cudaMemcpy(dev_color_history, dst, pixelcount * sizeof(glm::vec3), cudaMemcpyDeviceToDevice);
+            }
         }
     }
 

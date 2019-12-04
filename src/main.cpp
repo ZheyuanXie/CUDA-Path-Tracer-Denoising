@@ -39,6 +39,8 @@ float camera_tz;
 bool ui_run = true;
 bool ui_reset_denoiser = false;
 float ui_sigmal = 0.001f;
+float ui_sigmax = 0.2f;
+float ui_sigman = 0.2f;
 int ui_atrous_nlevel = 1;   // How man levels of A-trous filter used in denoising?
 int ui_history_level = 0;   // Which level of A-trous output is sent to history buffer?
 bool ui_accumulate = true;

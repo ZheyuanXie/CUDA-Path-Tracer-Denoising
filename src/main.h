@@ -37,6 +37,8 @@ extern int height;
 extern bool ui_run;
 extern bool ui_reset_denoiser;
 extern float ui_sigmal;
+extern float ui_sigmax;
+extern float ui_sigman;
 extern int ui_atrous_nlevel;
 extern bool ui_accumulate;
 extern int ui_history_level;

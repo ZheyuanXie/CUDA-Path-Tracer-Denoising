@@ -270,8 +270,10 @@ void mainLoop() {
                 ImGui::SliderFloat("M. Alpha", &ui_moment_alpha, 0.0f, 1.0f);
                 ImGui::Separator();
                 ImGui::SliderFloat("Sigma L.", &ui_sigmal, 0.0f, 128.0f);
+                ImGui::SliderFloat("Sigma X.", &ui_sigmax, 0.0f, 1.0f);
+                ImGui::SliderFloat("Sigma N.", &ui_sigman, 0.0f, 1.0f);
                 ImGui::SliderFloat("Var. Power", &ui_varpow, 0.5f, 5.0f);
-                ImGui::SliderInt("# Lv.", &ui_atrous_nlevel, 1, 10);
+                ImGui::SliderInt("# Lv.", &ui_atrous_nlevel, 0, 7);
                 ImGui::SliderInt("Hist. Lv.", &ui_history_level, 0, ui_atrous_nlevel);
             } 
 
