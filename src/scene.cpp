@@ -175,7 +175,7 @@ int Scene::loadCamera() {
     float fovy;
 
     //load static properties
-    for (int i = 0; i < 5; i++) {
+    for (int i = 0; i < 3; i++) {
         string line;
         utilityCore::safeGetline(fp_in, line);
         vector<string> tokens = utilityCore::tokenizeString(line);
@@ -184,10 +184,6 @@ int Scene::loadCamera() {
             camera.resolution.y = atoi(tokens[2].c_str());
         } else if (strcmp(tokens[0].c_str(), "FOVY") == 0) {
             fovy = atof(tokens[1].c_str());
-        } else if (strcmp(tokens[0].c_str(), "ITERATIONS") == 0) {
-            state.iterations = atoi(tokens[1].c_str());
-        } else if (strcmp(tokens[0].c_str(), "DEPTH") == 0) {
-            state.traceDepth = atoi(tokens[1].c_str());
         } else if (strcmp(tokens[0].c_str(), "FILE") == 0) {
             state.imageName = tokens[1];
         }
@@ -206,16 +202,6 @@ int Scene::loadCamera() {
         } else if (strcmp(tokens[0].c_str(), "UP") == 0) {
             camera_up_default_ = glm::vec3(atof(tokens[1].c_str()), atof(tokens[2].c_str()), atof(tokens[3].c_str()));
             camera.up = camera_up_default_;
-        } else if (strcmp(tokens[0].c_str(), "DOF") == 0) {
-            camera.depth_of_field = atoi(tokens[1].c_str());
-        } else if (strcmp(tokens[0].c_str(), "LENSR") == 0) {
-            camera.lens_radius = atof(tokens[1].c_str());
-        } else if (strcmp(tokens[0].c_str(), "FD") == 0) {
-            camera.focal_distance = atof(tokens[1].c_str());
-        } else if (strcmp(tokens[0].c_str(), "AA") == 0) {
-            camera.antialiasing = atoi(tokens[1].c_str());
-        } else if (strcmp(tokens[0].c_str(), "MOTION") == 0) {
-            camera.motion = glm::vec3(atof(tokens[1].c_str()), atof(tokens[2].c_str()), atof(tokens[3].c_str()));
         }
 
         utilityCore::safeGetline(fp_in, line);

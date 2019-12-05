@@ -251,18 +251,23 @@ void mainLoop() {
                     ui_reset_denoiser = true;
                 }
                 ImGui::Checkbox("Accumulate", &ui_accumulate);
+                ImGui::SliderInt("Max. Depth", &ui_tracedepth, 1, 10);
             }
 
             if (ImGui::CollapsingHeader("Denosing")) {
+                ImGui::Checkbox("Enable", &ui_denoise_enable);
+                ImGui::Checkbox("Temporal Acc.", &ui_temporal_enable);
+                ImGui::SameLine();
+                ImGui::Checkbox("Guided Blur", &ui_spatial_enable);
+                ImGui::Separator();
                 ImGui::Text("Temporal Acc.");
                 ImGui::SliderFloat("C. Alpha", &ui_color_alpha, 0.0f, 1.0f);
                 ImGui::SliderFloat("M. Alpha", &ui_moment_alpha, 0.0f, 1.0f);
                 ImGui::Separator();
                 ImGui::Text("Edge Stopping");
-                ImGui::SliderFloat("Sigma L.", &ui_sigmal, 0.0f, 128.0f);
+                ImGui::SliderFloat("Sigma L.", &ui_sigmal, 0.0f, 2.0f);
                 ImGui::SliderFloat("Sigma X.", &ui_sigmax, 0.0f, 1.0f);
                 ImGui::SliderFloat("Sigma N.", &ui_sigman, 0.0f, 1.0f);
-                ImGui::SliderFloat("Var. Power", &ui_varpow, 0.5f, 5.0f);
                 ImGui::Separator();
                 ImGui::Text("A-Trous Wavelet");
                 ImGui::SliderInt("# Lv.", &ui_atrous_nlevel, 0, 7);

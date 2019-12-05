@@ -52,7 +52,10 @@ extern float ui_color_alpha;
 extern float ui_moment_alpha;
 extern int ui_left_view_option;
 extern int ui_right_view_option;
-extern float ui_varpow;
+extern int ui_tracedepth;
+extern bool ui_denoise_enable;
+extern bool ui_temporal_enable;
+extern bool ui_spatial_enable;
 
 void runCuda();
 void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods);

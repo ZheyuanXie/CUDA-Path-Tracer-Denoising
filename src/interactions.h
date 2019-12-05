@@ -112,28 +112,16 @@ void scatterRay(
       // Refracting Light
       pathSegment.ray.direction = glm::refract(pathSegment.ray.direction, normal, eta);
       normal = -normal;
-      pathSegment.color *= m.color;
     } else {
       // Reflecting Light
       pathSegment.ray.direction = glm::reflect(pathSegment.ray.direction, normal);
-      pathSegment.color *= m.specular.color;
     }
-    
   } else if (nextRand(seed) < m.hasReflective) {                // Specular
     pathSegment.ray.direction = glm::reflect(pathSegment.ray.direction, normal);
-    pathSegment.color *= m.specular.color;
   } else {                                                // Diffusive
     pathSegment.ray.direction = calculateRandomDirectionInHemisphere(normal, seed);
-
-    // fake direct light
-    if (pathSegment.remainingBounces == 2) {
-        pathSegment.ray.direction = glm::normalize(glm::vec3(0.0f, 10.0f, 0.0f) - (intersect + 0.0001f * normal));
-        pathSegment.directLight = true;
-    }
   }
 
-  pathSegment.color *= m.color;
-  glm::clamp(pathSegment.color, glm::vec3(0.0f), glm::vec3(1.0f));              // Clamp the color
-  pathSegment.ray.origin = intersect + 0.0001f * normal;     // New ray shoot from intersection point
+  pathSegment.ray.origin = intersect + 1e-4f * normal;     // New ray shoot from intersection point
   pathSegment.remainingBounces--;                                               // Decrease bounce counter
 }

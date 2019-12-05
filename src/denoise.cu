@@ -75,7 +75,7 @@ void denoiseFree() {
 
 // A-Trous Filter
 __global__ void ATrousFilter(glm::vec3 * colorin, glm::vec3 * colorout, float * variance,
-                             GBufferTexel * gBuffer, glm::ivec2 res, int level, float varpow,
+                             GBufferTexel * gBuffer, glm::ivec2 res, int level,
                              float sigma_c, float sigma_n, float sigma_x)
 {
     // 5x5 A-Trous kernel
@@ -140,7 +140,7 @@ __global__ void ATrousFilter(glm::vec3 * colorin, glm::vec3 * colorout, float * 
                     glm::vec3 nq = gBuffer[q].normal;
                     
                     // Edge-stopping weights
-                    float wl = expf(-glm::distance(lp, lq) / (powf(var, varpow) * sigma_c + 1e-6));
+                    float wl = expf(-glm::distance(lp, lq) / (sqrt(var) * sigma_c + 1e-6));
                     float wn = min(1.0f, expf(-glm::distance(np, nq) / (sigma_n + 1e-6)));
                     float wx = min(1.0f, expf(-glm::distance(pp, pq) / (sigma_x + 1e-6)));
 
@@ -359,7 +359,7 @@ void denoise(int iter, glm::vec3 * input, glm::vec3 * output, GBufferTexel * gbu
         DebugView<<<blocksPerGrid2d, blockSize2d >>>(cam.resolution, output, dev_variance, 0.1f);
     }
     else {
-        if (ui_atrous_nlevel == 0) {
+        if (ui_atrous_nlevel == 0 || !ui_spatial_enable) {
             cudaMemcpy(output, dev_color_acc, sizeof(glm::vec3) * pixelcount, cudaMemcpyDeviceToDevice);
             cudaMemcpy(dev_color_history, dev_color_acc, pixelcount * sizeof(glm::vec3), cudaMemcpyDeviceToDevice);
         }
@@ -369,7 +369,7 @@ void denoise(int iter, glm::vec3 * input, glm::vec3 * output, GBufferTexel * gbu
             for (int level = 1; level <= ui_atrous_nlevel; level++) {
                 glm::vec3* src = (level == 1) ? dev_color_acc : dev_temp[level % 2];
                 glm::vec3* dst = (level == ui_atrous_nlevel) ? output : dev_temp[(level + 1) % 2];
-                ATrousFilter << <blocksPerGrid2d, blockSize2d >> > (src, dst, dev_variance, gbuffer, cam.resolution, level, ui_varpow, ui_sigmal, ui_sigman, ui_sigmax);
+                ATrousFilter << <blocksPerGrid2d, blockSize2d >> > (src, dst, dev_variance, gbuffer, cam.resolution, level, ui_sigmal, ui_sigman, ui_sigmax);
                 if (level == ui_history_level) cudaMemcpy(dev_color_history, dst, pixelcount * sizeof(glm::vec3), cudaMemcpyDeviceToDevice);
             }
         }

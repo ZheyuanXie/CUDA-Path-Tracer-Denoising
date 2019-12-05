@@ -38,11 +38,11 @@ float camera_tz;
 // GUI state
 bool ui_run = true;
 bool ui_reset_denoiser = false;
-float ui_sigmal = 0.001f;
-float ui_sigmax = 0.25f;
+float ui_sigmal = 0.75f;
+float ui_sigmax = 0.35f;
 float ui_sigman = 0.2f;
-int ui_atrous_nlevel = 1;   // How man levels of A-trous filter used in denoising?
-int ui_history_level = 0;   // Which level of A-trous output is sent to history buffer?
+int ui_atrous_nlevel = 5;   // How man levels of A-trous filter used in denoising?
+int ui_history_level = 1;   // Which level of A-trous output is sent to history buffer?
 bool ui_accumulate = true;
 bool ui_automate_camera = false;
 float ui_camera_speed_x = 0.1;
@@ -53,7 +53,10 @@ float ui_color_alpha = 0.2;
 float ui_moment_alpha = 0.2;
 int ui_left_view_option = 0;
 int ui_right_view_option = 0;
-float ui_varpow = 0.5f;
+int ui_tracedepth = 8;
+bool ui_denoise_enable = true;
+bool ui_temporal_enable = true;
+bool ui_spatial_enable = false;
 
 //-------------------------------
 //-------------MAIN--------------

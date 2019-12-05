@@ -6,7 +6,7 @@ SPECRGB     0 0 0
 REFL        0
 REFR        0
 REFRIOR     0
-EMITTANCE   5
+EMITTANCE   20
 
 // Diffuse white
 MATERIAL 1
@@ -61,18 +61,12 @@ EMITTANCE   0
 
 // Camera
 CAMERA
-RES         1000 1000
+RES         600 600
 FOVY        45
-ITERATIONS  1
-DEPTH       8
 FILE        cornell
 EYE         0.0 5 10.5
 LOOKAT      0 5 0
 UP          0 1 0
-DOF         0
-LENSR       2.0
-FD          7.5
-AA          1
 
 // Ceiling light
 OBJECT 0

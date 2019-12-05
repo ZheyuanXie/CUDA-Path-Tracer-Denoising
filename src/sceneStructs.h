@@ -60,17 +60,11 @@ struct Camera {
     glm::vec3 right;
     glm::vec2 fov;
     glm::vec2 pixelLength;
-    bool depth_of_field;
-    float lens_radius;
-    float focal_distance;
-    bool antialiasing;
-    glm::vec3 motion;
 };
 
 struct RenderState {
     Camera camera;
     unsigned int iterations;
-    int traceDepth;
     std::vector<glm::vec3> image;
     std::string imageName;
 };
@@ -80,7 +74,6 @@ struct PathSegment {
 	glm::vec3 color;
 	int pixelIndex;
 	int remainingBounces;
-    bool directLight;
 };
 
 // Use with a corresponding PathSegment to do:
@@ -91,6 +84,7 @@ struct ShadeableIntersection {
   glm::vec3 surfaceNormal;
   int materialId;
   int geomId;
+  bool outside;
 };
 
 struct GBufferTexel {
