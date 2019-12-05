@@ -47,18 +47,6 @@ void checkCUDAErrorFn(const char *msg, const char *file, int line) {
 #endif
 }
 
-struct ray_continuation_condition {
-  __host__ __device__ bool operator()(const PathSegment& s) {
-    return s.remainingBounces > 0;
-  }
-};
-
-struct material_id_comparator {
-  __host__ __device__ bool operator()(const ShadeableIntersection& s1, const ShadeableIntersection& s2) {
-    return s1.materialId < s2.materialId;
-  }
-};
-
 __host__ __device__
 thrust::default_random_engine makeSeededRandomEngine(int frame, int iter, int index, int depth) {
     int h = utilhash((1 << 31) | (depth << 27) | (frame << 13) | iter) ^ utilhash(index);
@@ -285,8 +273,7 @@ __global__ void shadeRealMaterial(int iter, int depth, int frame, int num_paths,
 
     if (pathSegment.remainingBounces < 0) return;
     if (intersection.t > 0.0f) { // if the intersection exists...
-      // Set up the RNG
-      thrust::default_random_engine rng = makeSeededRandomEngine(frame, iter, idx, depth);
+      unsigned int seed = initRand(idx, frame * depth, 16);
 
       Material material = materials[intersection.materialId];
       glm::vec3 materialColor = material.color;
@@ -303,7 +290,7 @@ __global__ void shadeRealMaterial(int iter, int depth, int frame, int num_paths,
       }
       else {  // Hit Material (Bounce)
         glm::vec3 intersect = pathSegment.ray.origin + intersection.t * pathSegment.ray.direction;
-        scatterRay(pathSegment, intersect, intersection.surfaceNormal, material, rng);
+        scatterRay(pathSegment, intersect, intersection.surfaceNormal, material, seed);
         if (pathSegments[idx].remainingBounces <= 0) {
             pathSegments[idx].color = glm::vec3(0.0f);
         }

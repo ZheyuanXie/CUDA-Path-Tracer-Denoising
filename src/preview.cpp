@@ -236,23 +236,43 @@ void mainLoop() {
 
         // Dear imgui define
         {
-            ImGui::Begin("Console");
+            ImGui::Begin("Control Panel");
             ImGui::SetWindowFontScale(2);
-            ImGui::Checkbox("Run", &ui_run);
-            ImGui::SameLine();
-            if (ImGui::Button("Step")) {
-                ui_step = true;
+
+            if (ImGui::CollapsingHeader("Ray Tracing"))
+            {
+                ImGui::Checkbox("Run", &ui_run);
+                ImGui::SameLine();
+                if (ImGui::Button("Step")) {
+                    ui_step = true;
+                }
+                ImGui::SameLine();
+                if (ImGui::Button("Clear")) {
+                    ui_reset_denoiser = true;
+                }
+                ImGui::Checkbox("Accumulate", &ui_accumulate);
             }
-            ImGui::SameLine();
-            if (ImGui::Button("Clear")) {
-                ui_reset_denoiser = true;
-            }
-            ImGui::Checkbox("Accumulate", &ui_accumulate);
-            
+
+            if (ImGui::CollapsingHeader("Denosing")) {
+                ImGui::Text("Temporal Acc.");
+                ImGui::SliderFloat("C. Alpha", &ui_color_alpha, 0.0f, 1.0f);
+                ImGui::SliderFloat("M. Alpha", &ui_moment_alpha, 0.0f, 1.0f);
+                ImGui::Separator();
+                ImGui::Text("Edge Stopping");
+                ImGui::SliderFloat("Sigma L.", &ui_sigmal, 0.0f, 128.0f);
+                ImGui::SliderFloat("Sigma X.", &ui_sigmax, 0.0f, 1.0f);
+                ImGui::SliderFloat("Sigma N.", &ui_sigman, 0.0f, 1.0f);
+                ImGui::SliderFloat("Var. Power", &ui_varpow, 0.5f, 5.0f);
+                ImGui::Separator();
+                ImGui::Text("A-Trous Wavelet");
+                ImGui::SliderInt("# Lv.", &ui_atrous_nlevel, 0, 7);
+                ImGui::SliderInt("Hist. Lv.", &ui_history_level, 0, ui_atrous_nlevel);
+            } 
+
             if (ImGui::CollapsingHeader("Camera"))
             {
                 Camera & cam = scene->state.camera;
-                ImGui::Checkbox("Automate", &ui_automate_camera);
+                ImGui::Checkbox("Automate Camera Motion", &ui_automate_camera);
                 ImGui::SameLine();
                 if (ImGui::Button("Reset")) {
                     scene->resetCamera();
@@ -263,21 +283,10 @@ void mainLoop() {
                 ImGui::Text("Camera Up: (%.3f, %.3f, %.3f)", cam.up.x, cam.up.y, cam.up.z);
                 ImGui::Text("Camera Right: (%.3f, %.3f, %.3f)", cam.right.x, cam.right.y, cam.right.z);
                 ImGui::Text("Camera View: (%.3f, %.3f, %.3f)", cam.view.x, cam.view.y, cam.view.z);
+                ImGui::Text("Camera Position: (%.3f, %.3f, %.3f)", cam.position.x, cam.position.y, cam.position.z);
             }
 
-            if (ImGui::CollapsingHeader("SVGF")) {
-                ImGui::SliderFloat("C. Alpha", &ui_color_alpha, 0.0f, 1.0f);
-                ImGui::SliderFloat("M. Alpha", &ui_moment_alpha, 0.0f, 1.0f);
-                ImGui::Separator();
-                ImGui::SliderFloat("Sigma L.", &ui_sigmal, 0.0f, 128.0f);
-                ImGui::SliderFloat("Sigma X.", &ui_sigmax, 0.0f, 1.0f);
-                ImGui::SliderFloat("Sigma N.", &ui_sigman, 0.0f, 1.0f);
-                ImGui::SliderFloat("Var. Power", &ui_varpow, 0.5f, 5.0f);
-                ImGui::SliderInt("# Lv.", &ui_atrous_nlevel, 0, 7);
-                ImGui::SliderInt("Hist. Lv.", &ui_history_level, 0, ui_atrous_nlevel);
-            } 
-
-            if (ImGui::CollapsingHeader("View")) {
+            if (ImGui::CollapsingHeader("Debug View")) {
                 const char* listbox_items_left[] = { "1 spp" };
                 ImGui::ListBox("Left View", &ui_left_view_option, listbox_items_left, IM_ARRAYSIZE(listbox_items_left), 3);
                 const char* listbox_items_right[] = { "Filtered", "HistoryLenth", "Variance" };

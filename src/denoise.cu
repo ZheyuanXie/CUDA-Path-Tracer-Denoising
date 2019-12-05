@@ -198,8 +198,8 @@ __global__ void BackProjection(float * variacne_out, int * history_length, int *
             glm::vec4 viewspace_position = prev_viewmat * glm::vec4(current_gbuffer[p].position, 1.0f);
             float clipx = viewspace_position.x / viewspace_position.z /** tanf(PI / 4)*/;
             float clipy = viewspace_position.y / viewspace_position.z /** tanf(PI / 4)*/;
-            float ndcx = clipx * 0.5f + 0.5f;
-            float ndcy = clipy * 0.5f + 0.5f;
+            float ndcx = -clipx * 0.5f + 0.5f;
+            float ndcy = -clipy * 0.5f + 0.5f;
             float prevx = ndcx * res.x - 0.5f;
             float prevy = ndcy * res.y - 0.5f;
             /////////////
@@ -325,10 +325,10 @@ __global__ void DebugView(glm::ivec2 res, glm::vec3 * colorout, T * value, float
 }
 
 glm::mat4 GetViewMatrix(const Camera& cam) {
-    //////////////////
-    glm::mat4 viewMatrix(glm::vec4(-cam.right, 0), glm::vec4(-cam.up, 0), glm::vec4(cam.view, 0), glm::vec4(cam.position, 1));
-    //////////////////
-    return viewMatrix;
+    return glm::inverse(glm::mat4(glm::vec4(cam.right,    0.f),
+                                  glm::vec4(cam.up,       0.f),
+                                  glm::vec4(cam.view,     0.f),
+                                  glm::vec4(cam.position, 1.f)));
 }
 
 void denoise(int iter, glm::vec3 * input, glm::vec3 * output, GBufferTexel * gbuffer) {
