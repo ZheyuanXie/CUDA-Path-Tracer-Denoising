@@ -195,7 +195,7 @@ bool init() {
         ImGuiIO& io = ImGui::GetIO();
 
         // Setup Dear ImGui style
-        ImGui::StyleColorsClassic();
+        ImGui::StyleColorsDark();
 
         // Setup Platform/Renderer bindings
         ImGui_ImplGlfw_InitForOpenGL(window, true);
@@ -205,110 +205,145 @@ bool init() {
     return true;
 }
 
+static ImGuiWindowFlags windowFlags= ImGuiWindowFlags_None | ImGuiWindowFlags_NoMove;
+static bool ui_autoresize = true;
+
+void drawGui(int windowWidth, int windowHeight) {
+    // Dear imgui new frame
+    {
+        glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+    }
+
+    // Dear imgui define
+    {
+        ImVec2 minSize(600.f, 600.f);
+        ImVec2 maxSize((float)windowWidth * 0.5, (float)windowHeight);
+        ImGui::SetNextWindowSizeConstraints(minSize, maxSize);
+
+        ImVec2 windowPos(0.0f, 0.0f);
+        ImGui::SetNextWindowPos(windowPos);
+
+        ImGui::Begin("Control Panel", 0, windowFlags);
+        ImGui::SetWindowFontScale(2);
+        
+        ImGui::Checkbox("Auto-Resize", &ui_autoresize);
+        if (ui_autoresize) {
+            windowFlags |= ImGuiWindowFlags_AlwaysAutoResize;
+        } else {
+            windowFlags &= ~ImGuiWindowFlags_AlwaysAutoResize;
+        }
+
+        if (ImGui::CollapsingHeader("Ray Tracing"))
+        {
+            ImGui::Checkbox("Run", &ui_run);
+            ImGui::SameLine();
+            if (ImGui::Button("Step")) {
+                ui_step = true;
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("Clear")) {
+                ui_reset_denoiser = true;
+            }
+            ImGui::Checkbox("Accumulate", &ui_accumulate);
+            ImGui::SliderInt("Max. Depth", &ui_tracedepth, 1, 10);
+            ImGui::Separator();
+            ImGui::Checkbox("Trace Shadow Ray", &ui_shadowray);
+            ImGui::SliderFloat("SR Int.", &ui_sintensity, 0.0f, 20.0f);
+            ImGui::SliderFloat("Sample Rad.", &ui_lightradius, 0.0f, 2.0f);
+        }
+
+        if (ImGui::CollapsingHeader("Denosing")) {
+            ImGui::Checkbox("Enable", &ui_denoise_enable);
+            ImGui::Checkbox("Temporal", &ui_temporal_enable);
+            ImGui::SameLine();
+            ImGui::Checkbox("Spatial", &ui_spatial_enable);
+            ImGui::Separator();
+            ImGui::Text("Temporal Acc.");
+            if (ImGui::Button("Reset Param.")) {
+                ui_color_alpha = 0.2f;
+                ui_moment_alpha = 0.2f;
+            }
+            ImGui::SliderFloat("C. Alpha", &ui_color_alpha, 0.0f, 1.0f);
+            ImGui::SliderFloat("M. Alpha", &ui_moment_alpha, 0.0f, 1.0f);
+            ImGui::Separator();
+            ImGui::Text("Variance Est.");
+            ImGui::Checkbox("Blur Var.", &ui_blurvariance);
+            ImGui::SliderFloat("Sigma L.", &ui_sigmal, 0.0f, 2.0f);
+            ImGui::SliderFloat("Sigma X.", &ui_sigmax, 0.0f, 1.0f);
+            ImGui::SliderFloat("Sigma N.", &ui_sigman, 0.0f, 1.0f);
+            ImGui::Separator();
+            ImGui::Text("A-Trous Wavelet");
+            ImGui::SliderInt("Num. Lv.", &ui_atrous_nlevel, 0, 7);
+            ImGui::SliderInt("Hist. Lv.", &ui_history_level, 0, ui_atrous_nlevel);
+        }
+
+        if (ImGui::CollapsingHeader("Camera"))
+        {
+            Camera & cam = scene->state.camera;
+            ImGui::Checkbox("Automate Camera Motion", &ui_automate_camera);
+            ImGui::SliderFloat("Spd. X", &ui_camera_speed_x, 0.0f, 1.5f);
+            ImGui::SliderFloat("Spd. Y", &ui_camera_speed_y, 0.0f, 0.5f);
+            ImGui::SliderFloat("Spd. Z", &ui_camera_speed_z, 0.0f, 0.5f);
+            if (ImGui::Button("Reset Camera")) {
+                scene->resetCamera();
+                resetCamera();
+            }
+            if (ImGui::TreeNodeEx("Camera Info", ImGuiTreeNodeFlags_DefaultOpen)) {
+                ImGui::Text("Camera Up: (%.3f, %.3f, %.3f)", cam.up.x, cam.up.y, cam.up.z);
+                ImGui::Text("Camera Right: (%.3f, %.3f, %.3f)", cam.right.x, cam.right.y, cam.right.z);
+                ImGui::Text("Camera View: (%.3f, %.3f, %.3f)", cam.view.x, cam.view.y, cam.view.z);
+                ImGui::Text("Camera Pos: (%.3f, %.3f, %.3f)", cam.position.x, cam.position.y, cam.position.z);
+                ImGui::Text("Theta: %.3f, Phi: %.3f", theta, phi);
+                ImGui::Text("Zoom: %.3f", zoom);
+                ImGui::TreePop();
+            }
+        }
+
+        if (ImGui::CollapsingHeader("Debug View")) {
+            const char* listbox_items_left[] = { "1 spp" };
+            ImGui::ListBox("Left View", &ui_left_view_option, listbox_items_left, IM_ARRAYSIZE(listbox_items_left), 3);
+            const char* listbox_items_right[] = { "Filtered", "HistoryLenth", "Variance" };
+            ImGui::ListBox("Right View", &ui_right_view_option, listbox_items_right, IM_ARRAYSIZE(listbox_items_right), 3);
+        }
+
+        ImGui::End();
+    }
+
+    // Dear imgui render
+    {
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+    }
+}
+
 void mainLoop() {
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
 
         // Path trace 1 frame
-        {
-            if (ui_run || ui_step) {
-                runCuda();
-                if (ui_step) {
-                    ui_step = false;
-                }
+        if (ui_run || ui_step) {
+            runCuda();
+            if (ui_step) {
+                ui_step = false;
             }
-            string title = "CUDA Path Tracer | Frame " + utilityCore::convertIntToString(frame);
-            glfwSetWindowTitle(window, title.c_str());
-            glBindBuffer(GL_PIXEL_UNPACK_BUFFER, pbo);
-            glBindTexture(GL_TEXTURE_2D, displayImage);
-            glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width * 2, height, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-            glClear(GL_COLOR_BUFFER_BIT);
-            glDrawElements(GL_TRIANGLES, 12,  GL_UNSIGNED_SHORT, 0);
         }
+        string title = "CUDA Path Tracer | Frame " + utilityCore::convertIntToString(frame);
+        glfwSetWindowTitle(window, title.c_str());
+        glBindBuffer(GL_PIXEL_UNPACK_BUFFER, pbo);
+        glBindTexture(GL_TEXTURE_2D, displayImage);
+        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width * 2, height, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+        glClear(GL_COLOR_BUFFER_BIT);
+        glDrawElements(GL_TRIANGLES, 12,  GL_UNSIGNED_SHORT, 0);
 
-        // Dear imgui new frame
-        {
-            glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
-            ImGui_ImplOpenGL3_NewFrame();
-            ImGui_ImplGlfw_NewFrame();
-            ImGui::NewFrame();
-        }
-
-        // Dear imgui define
-        {
-            ImGui::Begin("Control Panel");
-            ImGui::SetWindowFontScale(2);
-
-            if (ImGui::CollapsingHeader("Ray Tracing"))
-            {
-                ImGui::Checkbox("Run", &ui_run);
-                ImGui::SameLine();
-                if (ImGui::Button("Step")) {
-                    ui_step = true;
-                }
-                ImGui::SameLine();
-                if (ImGui::Button("Clear")) {
-                    ui_reset_denoiser = true;
-                }
-                ImGui::Checkbox("Accumulate", &ui_accumulate);
-                ImGui::SliderInt("Max. Depth", &ui_tracedepth, 1, 10);
-            }
-
-            if (ImGui::CollapsingHeader("Denosing")) {
-                ImGui::Checkbox("Enable", &ui_denoise_enable);
-                ImGui::Checkbox("Temporal Acc.", &ui_temporal_enable);
-                ImGui::SameLine();
-                ImGui::Checkbox("Guided Blur", &ui_spatial_enable);
-                ImGui::Separator();
-                ImGui::Text("Temporal Acc.");
-                ImGui::SliderFloat("C. Alpha", &ui_color_alpha, 0.0f, 1.0f);
-                ImGui::SliderFloat("M. Alpha", &ui_moment_alpha, 0.0f, 1.0f);
-                ImGui::Separator();
-                ImGui::Text("Edge Stopping");
-                ImGui::SliderFloat("Sigma L.", &ui_sigmal, 0.0f, 2.0f);
-                ImGui::SliderFloat("Sigma X.", &ui_sigmax, 0.0f, 1.0f);
-                ImGui::SliderFloat("Sigma N.", &ui_sigman, 0.0f, 1.0f);
-                ImGui::Separator();
-                ImGui::Text("A-Trous Wavelet");
-                ImGui::SliderInt("# Lv.", &ui_atrous_nlevel, 0, 7);
-                ImGui::SliderInt("Hist. Lv.", &ui_history_level, 0, ui_atrous_nlevel);
-            } 
-
-            if (ImGui::CollapsingHeader("Camera"))
-            {
-                Camera & cam = scene->state.camera;
-                ImGui::Checkbox("Automate Camera Motion", &ui_automate_camera);
-                ImGui::SameLine();
-                if (ImGui::Button("Reset")) {
-                    scene->resetCamera();
-                }
-                ImGui::SliderFloat("Spd. X", &ui_camera_speed_x, 0.0f, 0.5f);
-                ImGui::SliderFloat("Spd. Y", &ui_camera_speed_y, 0.0f, 0.5f);
-                ImGui::SliderFloat("Spd. Z", &ui_camera_speed_z, 0.0f, 0.5f);
-                ImGui::Text("Camera Up: (%.3f, %.3f, %.3f)", cam.up.x, cam.up.y, cam.up.z);
-                ImGui::Text("Camera Right: (%.3f, %.3f, %.3f)", cam.right.x, cam.right.y, cam.right.z);
-                ImGui::Text("Camera View: (%.3f, %.3f, %.3f)", cam.view.x, cam.view.y, cam.view.z);
-                ImGui::Text("Camera Position: (%.3f, %.3f, %.3f)", cam.position.x, cam.position.y, cam.position.z);
-            }
-
-            if (ImGui::CollapsingHeader("Debug View")) {
-                const char* listbox_items_left[] = { "1 spp" };
-                ImGui::ListBox("Left View", &ui_left_view_option, listbox_items_left, IM_ARRAYSIZE(listbox_items_left), 3);
-                const char* listbox_items_right[] = { "Filtered", "HistoryLenth", "Variance" };
-                ImGui::ListBox("Right View", &ui_right_view_option, listbox_items_right, IM_ARRAYSIZE(listbox_items_right), 3);
-            }
-            
-            ImGui::End();
-        }
-
-        // Dear imgui render
-        {
-            ImGui::Render();
-            ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-        }
-
+        // Draw imgui
         int display_w, display_h;
         glfwGetFramebufferSize(window, &display_w, &display_h);
+        drawGui(display_w, display_h);
+
+        // Display content
         glViewport(0, 0, display_w, display_h);
         glfwSwapBuffers(window);
     }

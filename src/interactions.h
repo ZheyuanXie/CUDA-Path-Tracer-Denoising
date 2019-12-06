@@ -98,30 +98,35 @@ void scatterRay(
         glm::vec3 normal,
         const Material &m,
         unsigned int& seed) {
-  if (m.hasRefractive) {                                  // Refreaction
+
+    pathSegment.ray.origin = intersect + 1e-4f * normal;    // New ray shoot from intersection point
+    pathSegment.remainingBounces--;                         // Decrease bounce counter
+
+    if (m.hasRefractive) {                                  // Refreaction
     float eta = 1.0f / m.indexOfRefraction;
     float unit_projection = glm::dot(pathSegment.ray.direction, normal);
     if (unit_projection > 0) {
-      eta = 1.0f / eta;
+        eta = 1.0f / eta;
     }
 
     // Schlick's approximation
     float R0 = powf((1.0f - eta) / (1.0f + eta), 2.0f);
     float R = R0 + (1 - R0) * powf(1 - glm::abs(unit_projection), 5.0f);
     if (R < nextRand(seed)) {
-      // Refracting Light
-      pathSegment.ray.direction = glm::refract(pathSegment.ray.direction, normal, eta);
-      normal = -normal;
+        // Refracting Light
+        pathSegment.ray.direction = glm::refract(pathSegment.ray.direction, normal, eta);
+        normal = -normal;
+        pathSegment.color *= m.color;
     } else {
-      // Reflecting Light
-      pathSegment.ray.direction = glm::reflect(pathSegment.ray.direction, normal);
+        // Reflecting Light
+        pathSegment.ray.direction = glm::reflect(pathSegment.ray.direction, normal);
+        pathSegment.color *= m.color;
     }
-  } else if (nextRand(seed) < m.hasReflective) {                // Specular
-    pathSegment.ray.direction = glm::reflect(pathSegment.ray.direction, normal);
-  } else {                                                // Diffusive
-    pathSegment.ray.direction = calculateRandomDirectionInHemisphere(normal, seed);
-  }
-
-  pathSegment.ray.origin = intersect + 1e-4f * normal;     // New ray shoot from intersection point
-  pathSegment.remainingBounces--;                                               // Decrease bounce counter
+    } else if (nextRand(seed) < m.hasReflective) {                // Specular
+        pathSegment.ray.direction = glm::reflect(pathSegment.ray.direction, normal);
+        pathSegment.color *= m.color;
+    } else {                                                // Diffusive
+        pathSegment.ray.direction = calculateRandomDirectionInHemisphere(normal, seed);
+        pathSegment.diffuse = true;
+    }
 }

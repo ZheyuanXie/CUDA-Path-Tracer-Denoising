@@ -76,7 +76,7 @@ void denoiseFree() {
 // A-Trous Filter
 __global__ void ATrousFilter(glm::vec3 * colorin, glm::vec3 * colorout, float * variance,
                              GBufferTexel * gBuffer, glm::ivec2 res, int level,
-                             float sigma_c, float sigma_n, float sigma_x)
+                             float sigma_c, float sigma_n, float sigma_x, bool blur_variance)
 {
     // 5x5 A-Trous kernel
     float h[25] = { 1.0 / 256.0, 1.0 / 64.0, 3.0 / 128.0, 1.0 / 64.0, 1.0 / 256.0,
@@ -96,15 +96,10 @@ __global__ void ATrousFilter(glm::vec3 * colorin, glm::vec3 * colorout, float * 
     if (x < res.x && y < res.y) {
         int p = x + y * res.x;
         int step = 1 << level;
-        float weights_sum = 0;
-        float weights_squared_sum = 0;
-        glm::vec3 color_sum = glm::vec3(0.0f);
-        float variance_sum = 0.0f;
-
         
-        float var = max(variance[p], 0.0f);
+        float var;
         // perform 3x3 gaussian blur on variance
-        {
+        if (blur_variance) {
             float sum = 0.0f;
             float sumw = 0.0f;
             glm::ivec2 g[9] = { glm::ivec2(-1, -1), glm::ivec2(0, -1), glm::ivec2(1, -1),
@@ -118,7 +113,19 @@ __global__ void ATrousFilter(glm::vec3 * colorin, glm::vec3 * colorout, float * 
                 }
             }
             var = max(sum / sumw, 0.0f);
+        } else {
+            var = max(variance[p], 0.0f);
         }
+        
+        // Load pixel p data
+        float lp = 0.2126 * colorin[p].x + 0.7152 * colorin[p].y + 0.0722 * colorin[p].z;
+        glm::vec3 pp = gBuffer[p].position;
+        glm::vec3 np = gBuffer[p].normal;
+
+        glm::vec3 color_sum = glm::vec3(0.0f);
+        float variance_sum = 0.0f;
+        float weights_sum = 0;
+        float weights_squared_sum = 0;
 
         for (int i = -2; i <= 2; i++) {
             for (int j = -2; j <= 2; j++) {
@@ -127,16 +134,9 @@ __global__ void ATrousFilter(glm::vec3 * colorin, glm::vec3 * colorout, float * 
                 if (xq >= 0 && xq < res.x && yq >= 0 && yq < res.y) {                    
                     int q = xq + yq * res.x;
 
-                    // Luminance
-                    float lp = 0.2126 * colorin[p].x + 0.7152 * colorin[p].y + 0.0722 * colorin[p].z;
+                    // Load pixel q data
                     float lq = 0.2126 * colorin[q].x + 0.7152 * colorin[q].y + 0.0722 * colorin[q].z;
-
-                    // Position
-                    glm::vec3 pp = gBuffer[p].position;
                     glm::vec3 pq = gBuffer[q].position;
-
-                    // Normal
-                    glm::vec3 np = gBuffer[p].normal;
                     glm::vec3 nq = gBuffer[q].normal;
                     
                     // Edge-stopping weights
@@ -159,8 +159,7 @@ __global__ void ATrousFilter(glm::vec3 * colorin, glm::vec3 * colorout, float * 
         if (weights_sum > 10e-6) {
             colorout[p] = color_sum / weights_sum;
             variance[p] = variance_sum / weights_squared_sum;
-        }
-        else {
+        } else {
             colorout[p] = colorin[p];
         }
     }
@@ -331,7 +330,7 @@ glm::mat4 GetViewMatrix(const Camera& cam) {
                                   glm::vec4(cam.position, 1.f)));
 }
 
-void denoise(int iter, glm::vec3 * input, glm::vec3 * output, GBufferTexel * gbuffer) {
+void denoise(glm::vec3 * output, glm::vec3 * input, GBufferTexel * gbuffer) {
     const Camera &cam = hst_scene->state.camera;
     const int pixelcount = cam.resolution.x * cam.resolution.y;
 
@@ -342,10 +341,11 @@ void denoise(int iter, glm::vec3 * input, glm::vec3 * output, GBufferTexel * gbu
         (cam.resolution.y + blockSize2d.y - 1) / blockSize2d.y);
 
     /* Estimate Variance */
-    
+    float color_alpha = ui_temporal_enable ? ui_color_alpha : 1.0f;
+    float moment_alpha = ui_temporal_enable ? ui_moment_alpha : 1.0f;
     if (ui_accumulate) BackProjection<<<blocksPerGrid2d, blockSize2d>>>(dev_variance, dev_history_length, dev_history_length_update, dev_moment_history, dev_color_history,
                                                                         dev_moment_acc, dev_color_acc, input, gbuffer, dev_gbuffer_prev, view_matrix_prev, cam.resolution,
-                                                                        ui_color_alpha, ui_moment_alpha);
+                                                                        color_alpha, moment_alpha);
     view_matrix_prev = GetViewMatrix(cam);
     cudaMemcpy(dev_gbuffer_prev, gbuffer, sizeof(GBufferTexel) * pixelcount, cudaMemcpyDeviceToDevice);
     cudaMemcpy(dev_moment_history, dev_moment_acc, sizeof(glm::vec2) * pixelcount, cudaMemcpyDeviceToDevice);
@@ -369,7 +369,7 @@ void denoise(int iter, glm::vec3 * input, glm::vec3 * output, GBufferTexel * gbu
             for (int level = 1; level <= ui_atrous_nlevel; level++) {
                 glm::vec3* src = (level == 1) ? dev_color_acc : dev_temp[level % 2];
                 glm::vec3* dst = (level == ui_atrous_nlevel) ? output : dev_temp[(level + 1) % 2];
-                ATrousFilter << <blocksPerGrid2d, blockSize2d >> > (src, dst, dev_variance, gbuffer, cam.resolution, level, ui_sigmal, ui_sigman, ui_sigmax);
+                ATrousFilter<<<blocksPerGrid2d, blockSize2d>>>(src, dst, dev_variance, gbuffer, cam.resolution, level, ui_sigmal, ui_sigman, ui_sigmax, ui_blurvariance);
                 if (level == ui_history_level) cudaMemcpy(dev_color_history, dst, pixelcount * sizeof(glm::vec3), cudaMemcpyDeviceToDevice);
             }
         }

@@ -25,7 +25,6 @@ glm::vec3 ogLookAt; // for recentering the camera
 
 Scene *scene;
 RenderState *renderState;
-int iteration;
 int frame = 0;
 
 int width;
@@ -37,46 +36,40 @@ float camera_tz;
 
 // GUI state
 bool ui_run = true;
-bool ui_reset_denoiser = false;
-float ui_sigmal = 0.75f;
-float ui_sigmax = 0.35f;
-float ui_sigman = 0.2f;
-int ui_atrous_nlevel = 5;   // How man levels of A-trous filter used in denoising?
-int ui_history_level = 1;   // Which level of A-trous output is sent to history buffer?
-bool ui_accumulate = true;
-bool ui_automate_camera = false;
-float ui_camera_speed_x = 0.1;
-float ui_camera_speed_y = 0.0;
-float ui_camera_speed_z = 0.0;
 bool ui_step = false;
-float ui_color_alpha = 0.2;
-float ui_moment_alpha = 0.2;
-int ui_left_view_option = 0;
-int ui_right_view_option = 0;
+bool ui_accumulate = true;
+bool ui_reset_denoiser = false;
 int ui_tracedepth = 8;
+
 bool ui_denoise_enable = true;
 bool ui_temporal_enable = true;
 bool ui_spatial_enable = false;
 
-//-------------------------------
-//-------------MAIN--------------
-//-------------------------------
+float ui_color_alpha = 0.2;
+float ui_moment_alpha = 0.2;
 
-int main(int argc, char** argv) {
-    startTimeString = currentTimeString();
+bool ui_blurvariance = true;
+float ui_sigmal = 0.70f;
+float ui_sigmax = 0.35f;
+float ui_sigman = 0.2f;
 
-    if (argc < 2) {
-        printf("Usage: %s SCENEFILE.txt\n", argv[0]);
-        return 1;
-    }
+int ui_atrous_nlevel = 5;   // How man levels of A-trous filter used in denoising?
+int ui_history_level = 1;   // Which level of A-trous output is sent to history buffer?
 
-    const char *sceneFile = argv[1];
+bool ui_shadowray = true; 
+float ui_sintensity = 2.7f;
+float ui_lightradius = 1.4f;
 
-    // Load scene file
-    scene = new Scene(sceneFile);
+bool ui_automate_camera = false;
+float ui_camera_speed_x = 0.5;
+float ui_camera_speed_y = 0.0;
+float ui_camera_speed_z = 0.0;
 
+int ui_left_view_option = 0;
+int ui_right_view_option = 0;
+
+void resetCamera() {
     // Set up camera stuff from loaded path tracer settings
-    iteration = 0;
     renderState = &scene->state;
     Camera &cam = renderState->camera;
     width = cam.resolution.x;
@@ -98,17 +91,39 @@ int main(int argc, char** argv) {
     ogLookAt = cam.lookAt;
     zoom = glm::length(cam.position - ogLookAt);
 
+    camchanged = true;
+}
+
+//-------------------------------
+//-------------MAIN--------------
+//-------------------------------
+
+int main(int argc, char** argv) {
+    startTimeString = currentTimeString();
+
+    if (argc < 2) {
+        printf("Usage: %s SCENEFILE.txt\n", argv[0]);
+        return 1;
+    }
+
+    const char *sceneFile = argv[1];
+
+    // Load scene file
+    scene = new Scene(sceneFile);
+    resetCamera();
+
     // Initialize CUDA and GL components
     init();
 
     // GLFW main loop
+    frame = 0;
     mainLoop();
 
     return 0;
 }
 
 void saveImage() {
-    float samples = iteration;
+    float samples = frame;
     // output image file
     image img(width, height);
 
@@ -137,7 +152,7 @@ void runCuda() {
         camera_tx += ui_camera_speed_x;
         camera_ty += ui_camera_speed_y;
         camera_tz += ui_camera_speed_z;
-        cam.lookAt.x = sinf(camera_tx);
+        cam.lookAt.x = (((camera_tx - 20.0f * floorf(camera_tx / 20.0f)) / 20.0f) * 10.0f - 5.0f) * ((((int)floorf(camera_tx / 20.0f)) % 2 == 0) ? 1.0f : -1.0f);
         cam.lookAt.y = 5.0f + sinf(camera_ty);
         cam.lookAt.z = 1.5f * sinf(camera_tz);
         camchanged = true;
@@ -163,29 +178,23 @@ void runCuda() {
         camchanged = false;
       }
 
-    // Map OpenGL buffer object for writing from CUDA on a single GPU
-    // No data is moved (Win & Linux). When mapped to CUDA, OpenGL should not use this buffer
-    if (frame == 0 || ui_reset_denoiser == true) {
+    ui_reset_denoiser |= (frame == 0);
+
+    if (ui_reset_denoiser == true) {
+        pathtraceFree();
+        pathtraceInit(scene);
         denoiseFree();
         denoiseInit(scene);
+        frame = 0;
         ui_reset_denoiser = false;
     }
 
-    if (iteration == 0) {
-        pathtraceFree();
-        pathtraceInit(scene);
-    }
-
-    if (iteration < 1) {
-        uchar4 *pbo_dptr = NULL;
-        cudaGLMapBufferObject((void**)&pbo_dptr, pbo);
-        pathtrace(pbo_dptr, frame++, ++iteration);        // execute the kernel
-        cudaGLUnmapBufferObject(pbo);                   // unmap buffer object
-    }
-
-    if (iteration == 1) {
-        iteration = 0;
-    }
+    // Map OpenGL buffer object for writing from CUDA on a single GPU
+    // No data is moved (Win & Linux). When mapped to CUDA, OpenGL should not use this buffer
+    uchar4 *pbo_dptr = NULL;
+    cudaGLMapBufferObject((void**)&pbo_dptr, pbo);
+    pathtrace(pbo_dptr, frame++);        // execute the kernel
+    cudaGLUnmapBufferObject(pbo);        // unmap buffer object
 }
 
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
@@ -217,14 +226,14 @@ void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
 
 void mousePositionCallback(GLFWwindow* window, double xpos, double ypos) {
   if (xpos == lastX || ypos == lastY) return; // otherwise, clicking back into window causes re-start
-  if (middleMousePressed) {
+  if (leftMousePressed) {
     // compute new camera parameters
     phi -= (xpos - lastX) / width;
     theta -= (ypos - lastY) / height;
     theta = std::fmax(0.001f, std::fmin(theta, PI));
     camchanged = true;
   }
-  else if (rightMousePressed) {
+  else if (middleMousePressed) {
     renderState = &scene->state;
     Camera &cam = renderState->camera;
     glm::vec3 forward = cam.view;
@@ -234,7 +243,7 @@ void mousePositionCallback(GLFWwindow* window, double xpos, double ypos) {
     cam.lookAt += (float)(ypos - lastY) * forward * 0.01f;
     camchanged = true;
   }
-  else if (leftMousePressed) {
+  else if (rightMousePressed) {
     renderState = &scene->state;
     Camera &cam = renderState->camera;
     glm::vec3 up = cam.up;

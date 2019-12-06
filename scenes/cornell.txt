@@ -6,7 +6,7 @@ SPECRGB     0 0 0
 REFL        0
 REFR        0
 REFRIOR     0
-EMITTANCE   20
+EMITTANCE   5
 
 // Diffuse white
 MATERIAL 1
@@ -95,7 +95,7 @@ SCALE       .01 10 10
 // Back wall
 OBJECT 3
 cube
-material 1
+material 4
 TRANS       0 5 -5
 ROTAT       0 90 0
 SCALE       .01 10 10
@@ -119,7 +119,7 @@ SCALE       .01 10 10
 // Object
 OBJECT 6
 sphere
-material 4
+material 1
 TRANS       3 2 1
 ROTAT       0 0 0
 SCALE       3 3 3
@@ -127,7 +127,7 @@ SCALE       3 3 3
 // Object
 OBJECT 7
 cube
-material 4
+material 1
 TRANS       -1 2 -1
 ROTAT       0 45 0
 SCALE       3 3 3
@@ -135,7 +135,7 @@ SCALE       3 3 3
 // Object
 OBJECT 8
 cube
-material 1
+material 4
 TRANS       -2 1 3
 ROTAT       0 30 0
 SCALE       2 2 2
@@ -143,7 +143,7 @@ SCALE       2 2 2
 // Object
 OBJECT 9
 cube
-material 5
+material 4
 TRANS       2 1 3.5
 ROTAT       0 60 0
 SCALE       1.5 1.5 1.5
