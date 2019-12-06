@@ -347,3 +347,4 @@ void pathtrace(uchar4 *pbo, int frame) {
     // Retrieve image from GPU
     cudaMemcpy(hst_scene->state.image.data(), dev_denoised_image,
             pixelcount * sizeof(glm::vec3), cudaMemcpyDeviceToHost);
+}
