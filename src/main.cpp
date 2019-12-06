@@ -15,7 +15,7 @@ static bool middleMousePressed = false;
 static double lastX;
 static double lastY;
 
-static bool camchanged = true;
+bool camchanged = true;
 static float dtheta = 0, dphi = 0;
 static glm::vec3 cammove;
 
@@ -37,12 +37,14 @@ float camera_tz;
 // GUI state
 bool ui_run = true;
 bool ui_step = false;
-bool ui_accumulate = true;
 bool ui_reset_denoiser = false;
 int ui_tracedepth = 8;
+bool ui_shadowray = false;
+float ui_sintensity = 2.7f;
+float ui_lightradius = 1.4f;
 
-bool ui_denoise_enable = true;
-bool ui_temporal_enable = true;
+bool ui_denoise_enable = false;
+bool ui_temporal_enable = false;
 bool ui_spatial_enable = false;
 
 float ui_color_alpha = 0.2;
@@ -55,10 +57,6 @@ float ui_sigman = 0.2f;
 
 int ui_atrous_nlevel = 5;   // How man levels of A-trous filter used in denoising?
 int ui_history_level = 1;   // Which level of A-trous output is sent to history buffer?
-
-bool ui_shadowray = true; 
-float ui_sintensity = 2.7f;
-float ui_lightradius = 1.4f;
 
 bool ui_automate_camera = false;
 float ui_camera_speed_x = 0.5;
@@ -131,7 +129,7 @@ void saveImage() {
         for (int y = 0; y < height; y++) {
             int index = x + (y * width);
             glm::vec3 pix = renderState->image[index];
-            img.setPixel(width - 1 - x, y, glm::vec3(pix) / samples);
+            img.setPixel(width - 1 - x, y, glm::vec3(pix));
         }
     }
 
@@ -159,7 +157,8 @@ void runCuda() {
     }
 
     if (camchanged) {
-        //iteration = 0;
+        if (!ui_denoise_enable) frame = 0;
+
         Camera &cam = renderState->camera;
         cameraPosition.x = zoom * sin(phi) * sin(theta);
         cameraPosition.y = zoom * cos(theta);

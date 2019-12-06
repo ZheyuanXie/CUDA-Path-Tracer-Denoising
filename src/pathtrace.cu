@@ -222,7 +222,7 @@ void computeShadowRay(Ray& shadowRay, glm::vec3 originPos, Geom& light, float li
 __global__ void rt(int frame, int num_paths, int max_depth,
     PathSegment * pathSegments, ShadeableIntersection * intersections, 
     Geom * geoms, int geoms_size, Triangle* triangles, Material * materials, GBufferTexel * gbuffer, glm::vec3 * image,
-    bool trace_shadowray, float sintensity, float lightSampleRadius)
+    bool trace_shadowray, float sintensity, float lightSampleRadius, bool denoise)
 {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
     if (idx < num_paths)
@@ -292,7 +292,11 @@ __global__ void rt(int frame, int num_paths, int max_depth,
                 }
             }
         }
-        image[segment.pixelIndex] = !trace_shadowray ? accumulatedColor : glm::clamp(accumulatedColor, glm::vec3(0.0f), glm::vec3(1.0f));
+        if (denoise) {
+            image[segment.pixelIndex] = !trace_shadowray ? accumulatedColor : glm::clamp(accumulatedColor, glm::vec3(0.0f), glm::vec3(1.0f));
+        } else {
+            image[segment.pixelIndex] = image[segment.pixelIndex] * (float)frame / (float)(frame + 1) + accumulatedColor / (float)(frame + 1);
+        }
     }
 }
 
@@ -321,7 +325,7 @@ void pathtrace(uchar4 *pbo, int frame) {
     rt<<<blocksPerGrid1d, blockSize1d>>>(frame, pixelcount, ui_tracedepth,
         dev_paths, dev_intersections,
         dev_geoms, hst_scene->geoms.size(),
-        dev_triangles, dev_materials, dev_gbuffer, dev_image, ui_shadowray, ui_sintensity, ui_lightradius);
+        dev_triangles, dev_materials, dev_gbuffer, dev_image, ui_shadowray, ui_sintensity, ui_lightradius, ui_denoise_enable);
     checkCUDAError("ray tracing");
 
     ////////////////////////// Denosing ///////////////////////////////////////
@@ -343,4 +347,3 @@ void pathtrace(uchar4 *pbo, int frame) {
     // Retrieve image from GPU
     cudaMemcpy(hst_scene->state.image.data(), dev_denoised_image,
             pixelcount * sizeof(glm::vec3), cudaMemcpyDeviceToHost);
-}

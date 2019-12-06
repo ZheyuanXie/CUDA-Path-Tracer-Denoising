@@ -20,7 +20,7 @@ EMITTANCE   0
 
 // Diffuse red
 MATERIAL 2
-RGB         .85 .35 .35
+RGB         .98 .70 .80
 SPECEX      0
 SPECRGB     0 0 0
 REFL        0
@@ -57,6 +57,26 @@ SPECRGB     .98 .98 .98
 REFL        1
 REFR        1
 REFRIOR     1.33
+EMITTANCE   0
+
+// Diffuse Cyan
+MATERIAL 6
+RGB         .68 .91 .86
+SPECEX      0
+SPECRGB     0 0 0
+REFL        0
+REFR        0
+REFRIOR     0
+EMITTANCE   0
+
+// Diffuse Yellow
+MATERIAL 7
+RGB         0.98 0.98 0
+SPECEX      0
+SPECRGB     0 0 0
+REFL        0
+REFR        0
+REFRIOR     0
 EMITTANCE   0
 
 // Camera
@@ -119,7 +139,7 @@ SCALE       .01 10 10
 // Object
 OBJECT 6
 sphere
-material 1
+material 7
 TRANS       3 2 1
 ROTAT       0 0 0
 SCALE       3 3 3
@@ -135,7 +155,7 @@ SCALE       3 3 3
 // Object
 OBJECT 8
 cube
-material 4
+material 6
 TRANS       -2 1 3
 ROTAT       0 30 0
 SCALE       2 2 2

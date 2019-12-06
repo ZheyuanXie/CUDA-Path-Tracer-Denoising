@@ -312,6 +312,18 @@ __global__ void BackProjection(float * variacne_out, int * history_length, int *
     }
 }
 
+// Estimate variance spatially
+__global__ void EstimateVariance(float * variacne, glm::vec3 * color, glm::vec2 res) {
+    int x = (blockIdx.x * blockDim.x) + threadIdx.x;
+    int y = (blockIdx.y * blockDim.y) + threadIdx.y;
+
+    if (x < res.x && y < res.y) {
+        int p = x + y * res.x;
+        // TODO
+        variacne[p] = 10.0f;
+    }
+}
+
 template <typename T>
 __global__ void DebugView(glm::ivec2 res, glm::vec3 * colorout, T * value, float scale) {
     int x = (blockIdx.x * blockDim.x) + threadIdx.x;
@@ -343,14 +355,16 @@ void denoise(glm::vec3 * output, glm::vec3 * input, GBufferTexel * gbuffer) {
     /* Estimate Variance */
     float color_alpha = ui_temporal_enable ? ui_color_alpha : 1.0f;
     float moment_alpha = ui_temporal_enable ? ui_moment_alpha : 1.0f;
-    if (ui_accumulate) BackProjection<<<blocksPerGrid2d, blockSize2d>>>(dev_variance, dev_history_length, dev_history_length_update, dev_moment_history, dev_color_history,
-                                                                        dev_moment_acc, dev_color_acc, input, gbuffer, dev_gbuffer_prev, view_matrix_prev, cam.resolution,
-                                                                        color_alpha, moment_alpha);
-    view_matrix_prev = GetViewMatrix(cam);
-    cudaMemcpy(dev_gbuffer_prev, gbuffer, sizeof(GBufferTexel) * pixelcount, cudaMemcpyDeviceToDevice);
-    cudaMemcpy(dev_moment_history, dev_moment_acc, sizeof(glm::vec2) * pixelcount, cudaMemcpyDeviceToDevice);
-    cudaMemcpy(dev_history_length, dev_history_length_update, sizeof(int) * pixelcount, cudaMemcpyDeviceToDevice);
-    
+    if (ui_temporal_enable){
+        BackProjection<<<blocksPerGrid2d, blockSize2d>>>(dev_variance, dev_history_length, dev_history_length_update, dev_moment_history, dev_color_history,
+                                                                       dev_moment_acc, dev_color_acc, input, gbuffer, dev_gbuffer_prev, view_matrix_prev, cam.resolution,
+                                                                       color_alpha, moment_alpha);
+        cudaMemcpy(dev_color_history, dev_color_acc, pixelcount * sizeof(glm::vec3), cudaMemcpyDeviceToDevice);
+    }
+    else {
+        EstimateVariance<<<blocksPerGrid2d, blockSize2d>>>(dev_variance, dev_color_acc, cam.resolution);
+        cudaMemcpy(dev_color_history, input, pixelcount * sizeof(glm::vec3), cudaMemcpyDeviceToDevice);
+    }
 
     if (ui_right_view_option == 1) {
         DebugView<<<blocksPerGrid2d, blockSize2d>>>(cam.resolution, output, dev_history_length, 100.0f);
@@ -360,20 +374,24 @@ void denoise(glm::vec3 * output, glm::vec3 * input, GBufferTexel * gbuffer) {
     }
     else {
         if (ui_atrous_nlevel == 0 || !ui_spatial_enable) {
-            cudaMemcpy(output, dev_color_acc, sizeof(glm::vec3) * pixelcount, cudaMemcpyDeviceToDevice);
-            cudaMemcpy(dev_color_history, dev_color_acc, pixelcount * sizeof(glm::vec3), cudaMemcpyDeviceToDevice);
+            /* Skip A-Tours filter */
+            cudaMemcpy(output, dev_color_history, sizeof(glm::vec3) * pixelcount, cudaMemcpyDeviceToDevice);
         }
         else {
-            /* Apply A-Tours filter */
-            if (ui_history_level == 0) cudaMemcpy(dev_color_history, dev_color_acc, pixelcount * sizeof(glm::vec3), cudaMemcpyDeviceToDevice);
+            /* Apply A-Tours filter */            
             for (int level = 1; level <= ui_atrous_nlevel; level++) {
-                glm::vec3* src = (level == 1) ? dev_color_acc : dev_temp[level % 2];
+                glm::vec3* src = (level == 1) ? dev_color_history : dev_temp[level % 2];
                 glm::vec3* dst = (level == ui_atrous_nlevel) ? output : dev_temp[(level + 1) % 2];
                 ATrousFilter<<<blocksPerGrid2d, blockSize2d>>>(src, dst, dev_variance, gbuffer, cam.resolution, level, ui_sigmal, ui_sigman, ui_sigmax, ui_blurvariance);
                 if (level == ui_history_level) cudaMemcpy(dev_color_history, dst, pixelcount * sizeof(glm::vec3), cudaMemcpyDeviceToDevice);
             }
         }
     }
+
+    cudaMemcpy(dev_gbuffer_prev, gbuffer, sizeof(GBufferTexel) * pixelcount, cudaMemcpyDeviceToDevice);
+    cudaMemcpy(dev_moment_history, dev_moment_acc, sizeof(glm::vec2) * pixelcount, cudaMemcpyDeviceToDevice);
+    cudaMemcpy(dev_history_length, dev_history_length_update, sizeof(int) * pixelcount, cudaMemcpyDeviceToDevice);
+    view_matrix_prev = GetViewMatrix(cam);
 
     cudaDeviceSynchronize();
 }

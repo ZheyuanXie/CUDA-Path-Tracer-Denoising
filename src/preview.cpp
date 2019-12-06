@@ -247,7 +247,6 @@ void drawGui(int windowWidth, int windowHeight) {
             if (ImGui::Button("Clear")) {
                 ui_reset_denoiser = true;
             }
-            ImGui::Checkbox("Accumulate", &ui_accumulate);
             ImGui::SliderInt("Max. Depth", &ui_tracedepth, 1, 10);
             ImGui::Separator();
             ImGui::Checkbox("Trace Shadow Ray", &ui_shadowray);
@@ -256,24 +255,36 @@ void drawGui(int windowWidth, int windowHeight) {
         }
 
         if (ImGui::CollapsingHeader("Denosing")) {
-            ImGui::Checkbox("Enable", &ui_denoise_enable);
+            if (ImGui::Checkbox("Enable", &ui_denoise_enable)) {
+                if (ui_denoise_enable) {
+
+                }
+                else {
+                    camchanged = true;
+                }
+            }
             ImGui::Checkbox("Temporal", &ui_temporal_enable);
             ImGui::SameLine();
             ImGui::Checkbox("Spatial", &ui_spatial_enable);
             ImGui::Separator();
             ImGui::Text("Temporal Acc.");
-            if (ImGui::Button("Reset Param.")) {
+            ImGui::SliderFloat("C. Alpha", &ui_color_alpha, 0.0f, 1.0f);
+            ImGui::SliderFloat("M. Alpha", &ui_moment_alpha, 0.0f, 1.0f);
+            if (ImGui::Button("Set Default Param.##1")) {
                 ui_color_alpha = 0.2f;
                 ui_moment_alpha = 0.2f;
             }
-            ImGui::SliderFloat("C. Alpha", &ui_color_alpha, 0.0f, 1.0f);
-            ImGui::SliderFloat("M. Alpha", &ui_moment_alpha, 0.0f, 1.0f);
             ImGui::Separator();
             ImGui::Text("Variance Est.");
             ImGui::Checkbox("Blur Var.", &ui_blurvariance);
             ImGui::SliderFloat("Sigma L.", &ui_sigmal, 0.0f, 2.0f);
             ImGui::SliderFloat("Sigma X.", &ui_sigmax, 0.0f, 1.0f);
             ImGui::SliderFloat("Sigma N.", &ui_sigman, 0.0f, 1.0f);
+            if (ImGui::Button("Set Default Param.##2")) {
+                ui_sigmal = 0.7f;
+                ui_sigmax = 0.35f;
+                ui_sigman = 0.2f;
+            }
             ImGui::Separator();
             ImGui::Text("A-Trous Wavelet");
             ImGui::SliderInt("Num. Lv.", &ui_atrous_nlevel, 0, 7);
@@ -282,16 +293,13 @@ void drawGui(int windowWidth, int windowHeight) {
 
         if (ImGui::CollapsingHeader("Camera"))
         {
-            Camera & cam = scene->state.camera;
-            ImGui::Checkbox("Automate Camera Motion", &ui_automate_camera);
-            ImGui::SliderFloat("Spd. X", &ui_camera_speed_x, 0.0f, 1.5f);
-            ImGui::SliderFloat("Spd. Y", &ui_camera_speed_y, 0.0f, 0.5f);
-            ImGui::SliderFloat("Spd. Z", &ui_camera_speed_z, 0.0f, 0.5f);
             if (ImGui::Button("Reset Camera")) {
                 scene->resetCamera();
                 resetCamera();
             }
+
             if (ImGui::TreeNodeEx("Camera Info", ImGuiTreeNodeFlags_DefaultOpen)) {
+                Camera & cam = scene->state.camera;
                 ImGui::Text("Camera Up: (%.3f, %.3f, %.3f)", cam.up.x, cam.up.y, cam.up.z);
                 ImGui::Text("Camera Right: (%.3f, %.3f, %.3f)", cam.right.x, cam.right.y, cam.right.z);
                 ImGui::Text("Camera View: (%.3f, %.3f, %.3f)", cam.view.x, cam.view.y, cam.view.z);
@@ -300,6 +308,12 @@ void drawGui(int windowWidth, int windowHeight) {
                 ImGui::Text("Zoom: %.3f", zoom);
                 ImGui::TreePop();
             }
+            ImGui::Separator();
+            ImGui::SliderFloat("Spd. X", &ui_camera_speed_x, 0.0f, 1.5f);
+            ImGui::SliderFloat("Spd. Y", &ui_camera_speed_y, 0.0f, 0.5f);
+            ImGui::SliderFloat("Spd. Z", &ui_camera_speed_z, 0.0f, 0.5f);
+            ImGui::Checkbox("Automate Camera Motion", &ui_automate_camera);
+            
         }
 
         if (ImGui::CollapsingHeader("Debug View")) {
