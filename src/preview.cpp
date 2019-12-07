@@ -314,6 +314,8 @@ void drawGui(int windowWidth, int windowHeight) {
             ImGui::SliderFloat("Spd. X", &ui_camera_speed_x, 0.0f, 1.5f);
             ImGui::SliderFloat("Spd. Y", &ui_camera_speed_y, 0.0f, 0.5f);
             ImGui::SliderFloat("Spd. Z", &ui_camera_speed_z, 0.0f, 0.5f);
+            ImGui::SliderFloat("Spd. Theta", &ui_camera_speed_theta, 0.0f, 0.5f);
+            ImGui::SliderFloat("Spd. Phi", &ui_camera_speed_phi, 0.0f, 0.5f);
             ImGui::Checkbox("Automate Camera Motion", &ui_automate_camera);
             
         }

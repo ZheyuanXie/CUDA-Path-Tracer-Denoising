@@ -16,12 +16,16 @@ static double lastX;
 static double lastY;
 
 bool camchanged = true;
-static float dtheta = 0, dphi = 0;
-static glm::vec3 cammove;
-
 float zoom, theta, phi;
 glm::vec3 cameraPosition;
 glm::vec3 ogLookAt; // for recentering the camera
+
+// For camera automation
+static float camera_tx = 0.0f;
+static float camera_ty = 0.0f;
+static float camera_tz = 0.0f;
+static float camera_ttheta = 0.0f;
+static float camera_tphi = 0.0f;
 
 Scene *scene;
 RenderState *renderState;
@@ -30,11 +34,8 @@ int frame = 0;
 int width;
 int height;
 
-float camera_tx;
-float camera_ty;
-float camera_tz;
-
-// GUI state
+/////////// GUI Controlled State ///////////
+// Path Tracer
 bool ui_run = true;
 bool ui_step = false;
 bool ui_reset_denoiser = false;
@@ -44,28 +45,31 @@ bool ui_reducevar = true;
 float ui_sintensity = 2.7f;
 float ui_lightradius = 1.4f;
 
+// Denoise
 bool ui_denoise_enable = false;
 bool ui_temporal_enable = false;
 bool ui_spatial_enable = false;
-
 float ui_color_alpha = 0.2;
 float ui_moment_alpha = 0.2;
-
 bool ui_blurvariance = true;
 float ui_sigmal = 0.70f;
 float ui_sigmax = 0.35f;
 float ui_sigman = 0.2f;
-
 int ui_atrous_nlevel = 5;   // How man levels of A-trous filter used in denoising?
 int ui_history_level = 1;   // Which level of A-trous output is sent to history buffer?
 
+// Camera
 bool ui_automate_camera = false;
-float ui_camera_speed_x = 0.5;
+float ui_camera_speed_x = 0.0;
 float ui_camera_speed_y = 0.0;
 float ui_camera_speed_z = 0.0;
+float ui_camera_speed_theta = 0.0;
+float ui_camera_speed_phi = 0.0;
 
+// Debug View
 int ui_left_view_option = 0;
 int ui_right_view_option = 0;
+////////////////////////////////////////////
 
 void resetCamera() {
     // Set up camera stuff from loaded path tracer settings
@@ -151,9 +155,13 @@ void runCuda() {
         camera_tx += ui_camera_speed_x;
         camera_ty += ui_camera_speed_y;
         camera_tz += ui_camera_speed_z;
-        cam.lookAt.x = (((camera_tx - 20.0f * floorf(camera_tx / 20.0f)) / 20.0f) * 10.0f - 5.0f) * ((((int)floorf(camera_tx / 20.0f)) % 2 == 0) ? 1.0f : -1.0f);
-        cam.lookAt.y = 5.0f + sinf(camera_ty);
-        cam.lookAt.z = 1.5f * sinf(camera_tz);
+        camera_ttheta += ui_camera_speed_theta;
+        camera_tphi += ui_camera_speed_phi;
+        cam.lookAt.x = 0.0f + 2.0f * sinf(camera_tx);
+        cam.lookAt.y = 5.0f + 1.0f * sinf(camera_ty);
+        cam.lookAt.z = 0.0f + 1.5f * sinf(camera_tz);
+        theta = PI * 0.4f + PI / 18 * sinf(camera_ttheta);
+        phi   = PI * 0.0f + PI / 12 * sinf(camera_tphi);
         camchanged = true;
     }
 
