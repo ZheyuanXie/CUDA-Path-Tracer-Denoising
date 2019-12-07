@@ -28,7 +28,6 @@ using namespace std;
 //-------------------------------
 
 extern Scene* scene;
-extern int iteration;
 extern int frame;
 
 extern int width;
@@ -62,6 +61,7 @@ extern bool ui_shadowray;
 extern float ui_sintensity;
 extern float ui_lightradius;
 extern bool ui_blurvariance;
+extern bool ui_reducevar;
 
 void runCuda();
 void resetCamera();

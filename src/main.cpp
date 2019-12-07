@@ -39,7 +39,8 @@ bool ui_run = true;
 bool ui_step = false;
 bool ui_reset_denoiser = false;
 int ui_tracedepth = 8;
-bool ui_shadowray = false;
+bool ui_shadowray = true;
+bool ui_reducevar = true;
 float ui_sintensity = 2.7f;
 float ui_lightradius = 1.4f;
 

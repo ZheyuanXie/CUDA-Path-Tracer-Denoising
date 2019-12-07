@@ -236,7 +236,7 @@ void drawGui(int windowWidth, int windowHeight) {
             windowFlags &= ~ImGuiWindowFlags_AlwaysAutoResize;
         }
 
-        if (ImGui::CollapsingHeader("Ray Tracing"))
+        if (ImGui::CollapsingHeader("Ray Tracing", ImGuiTreeNodeFlags_DefaultOpen))
         {
             ImGui::Checkbox("Run", &ui_run);
             ImGui::SameLine();
@@ -250,11 +250,13 @@ void drawGui(int windowWidth, int windowHeight) {
             ImGui::SliderInt("Max. Depth", &ui_tracedepth, 1, 10);
             ImGui::Separator();
             ImGui::Checkbox("Trace Shadow Ray", &ui_shadowray);
+            ImGui::SameLine();
+            ImGui::Checkbox("Reduce Var.", &ui_reducevar);
             ImGui::SliderFloat("SR Int.", &ui_sintensity, 0.0f, 20.0f);
             ImGui::SliderFloat("Sample Rad.", &ui_lightradius, 0.0f, 2.0f);
         }
 
-        if (ImGui::CollapsingHeader("Denosing")) {
+        if (ImGui::CollapsingHeader("Denosing", ImGuiTreeNodeFlags_DefaultOpen)) {
             if (ImGui::Checkbox("Enable", &ui_denoise_enable)) {
                 if (ui_denoise_enable) {
 
@@ -291,7 +293,7 @@ void drawGui(int windowWidth, int windowHeight) {
             ImGui::SliderInt("Hist. Lv.", &ui_history_level, 0, ui_atrous_nlevel);
         }
 
-        if (ImGui::CollapsingHeader("Camera"))
+        if (ImGui::CollapsingHeader("Camera", ImGuiTreeNodeFlags_DefaultOpen))
         {
             if (ImGui::Button("Reset Camera")) {
                 scene->resetCamera();
@@ -358,7 +360,7 @@ void mainLoop() {
         drawGui(display_w, display_h);
 
         // Display content
-        glViewport(0, 0, display_w, display_h);
+        glViewport(0, (display_h - display_w / 2) / 2, display_w, display_w / 2);
         glfwSwapBuffers(window);
     }
 
