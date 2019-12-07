@@ -3,6 +3,12 @@
 #include "main.h"
 #include "preview.h"
 
+#include "imgui/imgui.h"
+#include "imgui/imgui_impl_glfw.h"
+#include "imgui/imgui_impl_opengl3.h"
+
+#define IMGUI_IMPL_OPENGL_LOADER_GLEW
+
 GLuint positionLocation = 0;
 GLuint texcoordsLocation = 1;
 GLuint pbo;
@@ -150,6 +156,9 @@ bool init() {
     if (!glfwInit()) {
         exit(EXIT_FAILURE);
     }
+    const char* glsl_version = "#version 130";
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
 
     window = glfwCreateWindow(width * 2, height, "CUDA Path Tracer", NULL, NULL);
     if (!window) {
@@ -160,6 +169,7 @@ bool init() {
     glfwSetKeyCallback(window, keyCallback);
     glfwSetCursorPosCallback(window, mousePositionCallback);
     glfwSetMouseButtonCallback(window, mouseButtonCallback);
+    glfwSwapInterval(1); // Enable vsync
 
     // Set up GL context
     glewExperimental = GL_TRUE;
@@ -177,26 +187,188 @@ bool init() {
     glUseProgram(passthroughProgram);
     glActiveTexture(GL_TEXTURE0);
 
+    {
+
+        // Setup Dear ImGui context
+        IMGUI_CHECKVERSION();
+        ImGui::CreateContext();
+        ImGuiIO& io = ImGui::GetIO();
+
+        // Setup Dear ImGui style
+        ImGui::StyleColorsDark();
+
+        // Setup Platform/Renderer bindings
+        ImGui_ImplGlfw_InitForOpenGL(window, true);
+        ImGui_ImplOpenGL3_Init(glsl_version);
+    }
+
     return true;
+}
+
+static ImGuiWindowFlags windowFlags= ImGuiWindowFlags_None | ImGuiWindowFlags_NoMove;
+static bool ui_autoresize = true;
+
+void drawGui(int windowWidth, int windowHeight) {
+    // Dear imgui new frame
+    {
+        glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+    }
+
+    // Dear imgui define
+    {
+        ImVec2 minSize(600.f, 600.f);
+        ImVec2 maxSize((float)windowWidth * 0.5, (float)windowHeight);
+        ImGui::SetNextWindowSizeConstraints(minSize, maxSize);
+
+        ImVec2 windowPos(0.0f, 0.0f);
+        ImGui::SetNextWindowPos(windowPos);
+
+        ImGui::Begin("Control Panel", 0, windowFlags);
+        ImGui::SetWindowFontScale(2);
+        
+        ImGui::Checkbox("Auto-Resize", &ui_autoresize);
+        if (ui_autoresize) {
+            windowFlags |= ImGuiWindowFlags_AlwaysAutoResize;
+        } else {
+            windowFlags &= ~ImGuiWindowFlags_AlwaysAutoResize;
+        }
+
+        if (ImGui::CollapsingHeader("Ray Tracing", ImGuiTreeNodeFlags_DefaultOpen))
+        {
+            ImGui::Checkbox("Run", &ui_run);
+            ImGui::SameLine();
+            if (ImGui::Button("Step")) {
+                ui_step = true;
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("Clear")) {
+                ui_reset_denoiser = true;
+            }
+            ImGui::SliderInt("Max. Depth", &ui_tracedepth, 1, 10);
+            ImGui::Separator();
+            ImGui::Checkbox("Trace Shadow Ray", &ui_shadowray);
+            ImGui::SameLine();
+            ImGui::Checkbox("Reduce Var.", &ui_reducevar);
+            ImGui::SliderFloat("SR Int.", &ui_sintensity, 0.0f, 20.0f);
+            ImGui::SliderFloat("Sample Rad.", &ui_lightradius, 0.0f, 2.0f);
+        }
+
+        if (ImGui::CollapsingHeader("Denosing", ImGuiTreeNodeFlags_DefaultOpen)) {
+            if (ImGui::Checkbox("Enable", &ui_denoise_enable)) {
+                if (ui_denoise_enable) {
+
+                }
+                else {
+                    camchanged = true;
+                }
+            }
+            ImGui::Checkbox("Temporal", &ui_temporal_enable);
+            ImGui::SameLine();
+            ImGui::Checkbox("Spatial", &ui_spatial_enable);
+            ImGui::Separator();
+            ImGui::Text("Temporal Acc.");
+            ImGui::SliderFloat("C. Alpha", &ui_color_alpha, 0.0f, 1.0f);
+            ImGui::SliderFloat("M. Alpha", &ui_moment_alpha, 0.0f, 1.0f);
+            if (ImGui::Button("Set Default Param.##1")) {
+                ui_color_alpha = 0.2f;
+                ui_moment_alpha = 0.2f;
+            }
+            ImGui::Separator();
+            ImGui::Text("Variance Est.");
+            ImGui::Checkbox("Blur Var.", &ui_blurvariance);
+            ImGui::SliderFloat("Sigma L.", &ui_sigmal, 0.0f, 2.0f);
+            ImGui::SliderFloat("Sigma X.", &ui_sigmax, 0.0f, 1.0f);
+            ImGui::SliderFloat("Sigma N.", &ui_sigman, 0.0f, 1.0f);
+            if (ImGui::Button("Set Default Param.##2")) {
+                ui_sigmal = 0.7f;
+                ui_sigmax = 0.35f;
+                ui_sigman = 0.2f;
+            }
+            ImGui::Separator();
+            ImGui::Text("A-Trous Wavelet");
+            ImGui::SliderInt("Num. Lv.", &ui_atrous_nlevel, 0, 7);
+            ImGui::SliderInt("Hist. Lv.", &ui_history_level, 0, ui_atrous_nlevel);
+        }
+
+        if (ImGui::CollapsingHeader("Camera", ImGuiTreeNodeFlags_DefaultOpen))
+        {
+            if (ImGui::Button("Reset Camera")) {
+                scene->resetCamera();
+                resetCamera();
+            }
+
+            if (ImGui::TreeNodeEx("Camera Info", ImGuiTreeNodeFlags_DefaultOpen)) {
+                Camera & cam = scene->state.camera;
+                ImGui::Text("Camera Up: (%.3f, %.3f, %.3f)", cam.up.x, cam.up.y, cam.up.z);
+                ImGui::Text("Camera Right: (%.3f, %.3f, %.3f)", cam.right.x, cam.right.y, cam.right.z);
+                ImGui::Text("Camera View: (%.3f, %.3f, %.3f)", cam.view.x, cam.view.y, cam.view.z);
+                ImGui::Text("Camera Pos: (%.3f, %.3f, %.3f)", cam.position.x, cam.position.y, cam.position.z);
+                ImGui::Text("Theta: %.3f, Phi: %.3f", theta, phi);
+                ImGui::Text("Zoom: %.3f", zoom);
+                ImGui::TreePop();
+            }
+            ImGui::Separator();
+            ImGui::SliderFloat("Spd. X", &ui_camera_speed_x, 0.0f, 1.5f);
+            ImGui::SliderFloat("Spd. Y", &ui_camera_speed_y, 0.0f, 0.5f);
+            ImGui::SliderFloat("Spd. Z", &ui_camera_speed_z, 0.0f, 0.5f);
+            ImGui::Checkbox("Automate Camera Motion", &ui_automate_camera);
+            
+        }
+
+        if (ImGui::CollapsingHeader("Debug View")) {
+            const char* listbox_items_left[] = { "1 spp" };
+            ImGui::ListBox("Left View", &ui_left_view_option, listbox_items_left, IM_ARRAYSIZE(listbox_items_left), 3);
+            const char* listbox_items_right[] = { "Filtered", "HistoryLenth", "Variance" };
+            ImGui::ListBox("Right View", &ui_right_view_option, listbox_items_right, IM_ARRAYSIZE(listbox_items_right), 3);
+        }
+
+        ImGui::End();
+    }
+
+    // Dear imgui render
+    {
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+    }
 }
 
 void mainLoop() {
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
-        runCuda();
 
-        string title = "CUDA Path Tracer | " + utilityCore::convertIntToString(frame) + " Frames " + utilityCore::convertIntToString(iteration) + " Iterations ";
+        // Path trace 1 frame
+        if (ui_run || ui_step) {
+            runCuda();
+            if (ui_step) {
+                ui_step = false;
+            }
+        }
+        string title = "CUDA Path Tracer | Frame " + utilityCore::convertIntToString(frame);
         glfwSetWindowTitle(window, title.c_str());
-
         glBindBuffer(GL_PIXEL_UNPACK_BUFFER, pbo);
         glBindTexture(GL_TEXTURE_2D, displayImage);
         glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width * 2, height, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
         glClear(GL_COLOR_BUFFER_BIT);
-
-        // VAO, shader program, and texture already bound
         glDrawElements(GL_TRIANGLES, 12,  GL_UNSIGNED_SHORT, 0);
+
+        // Draw imgui
+        int display_w, display_h;
+        glfwGetFramebufferSize(window, &display_w, &display_h);
+        drawGui(display_w, display_h);
+
+        // Display content
+        glViewport(0, (display_h - display_w / 2) / 2, display_w, display_w / 2);
         glfwSwapBuffers(window);
     }
+
+    // Cleanup
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
+
     glfwDestroyWindow(window);
     glfwTerminate();
 }
