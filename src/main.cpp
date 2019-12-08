@@ -161,7 +161,7 @@ void runCuda() {
         cam.lookAt.x = 0.0f + 2.0f * sinf(camera_tx);
         cam.lookAt.y = 5.0f + 1.0f * sinf(camera_ty);
         cam.lookAt.z = 0.0f + 1.5f * sinf(camera_tz);
-        theta = PI * 0.4f + PI / 18 * sinf(camera_ttheta);
+        theta = PI * 0.5f + PI / 18 * sinf(camera_ttheta);
         phi   = PI * 0.0f + PI / 12 * sinf(camera_tphi);
         camchanged = true;
     }

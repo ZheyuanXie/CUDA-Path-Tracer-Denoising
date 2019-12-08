@@ -336,7 +336,7 @@ void drawGui(int windowWidth, int windowHeight) {
             ImGui::Checkbox("Automate Camera Motion(A)", &ui_automate_camera);
         }
 
-        if (ImGui::CollapsingHeader("Debug View")) {
+        if (ImGui::CollapsingHeader("Debug View", ImGuiTreeNodeFlags_DefaultOpen)) {
             const char* listbox_items_left[] = { "1 spp" };
             ImGui::ListBox("Left View", &ui_left_view_option, listbox_items_left, IM_ARRAYSIZE(listbox_items_left), 3);
             const char* listbox_items_right[] = { "Filtered", "HistoryLenth", "Variance" };

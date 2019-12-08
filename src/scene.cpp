@@ -104,12 +104,7 @@ int Scene::loadGeom(string objectid) {
         //THE CURRENT THINGS IS MESH
         if (loadingmesh) {
             utilityCore::safeGetline(fp_in, line);
-            int l = file_name.length() - 1;
-            while (file_name[l] != '/') {
-                l--;
-            }
-            string objPath = file_name.substr(0, l + 1) + line;
-            loadMesh(objPath, newGeom, newGeom.transform, newGeom.invTranspose);
+            loadMesh(line, newGeom, newGeom.transform, newGeom.invTranspose);
         }
 
         utilityCore::safeGetline(fp_in, line);
@@ -238,6 +233,7 @@ int Scene::loadMaterial(string materialid) {
 
 static int tri_index = 0;
 void Scene::loadMesh(string objPath, Geom& newGeom, const glm::mat4& transform, const glm::mat4& invTranspose) {
+    objPath = "../scenes/Models/" + objPath;
     std::vector<tinyobj::shape_t> shapes;
     std::vector<tinyobj::material_t> materials;
 
