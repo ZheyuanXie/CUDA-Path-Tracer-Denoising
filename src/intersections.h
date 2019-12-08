@@ -153,7 +153,7 @@ __host__ __device__ float sphereIntersectionTest(Geom sphere, Ray r,
  * @param outside            Output param for whether the ray came from outside.
  * @return                   Ray parameter `t` value. -1 if no intersection.
  */
-__host__ __device__ float meshIntersectionTest(Geom mesh, Triangle* triangles, Ray r,
+/*__host__ __device__ float meshIntersectionTest(Geom mesh, Triangle* triangles, Ray r,
   glm::vec3 &intersectionPoint, glm::vec3 &normal, bool &outside) {
 
   glm::vec3 ro = multiplyMV(mesh.inverseTransform, glm::vec4(r.origin, 1.0f));
@@ -215,4 +215,115 @@ __host__ __device__ float meshIntersectionTest(Geom mesh, Triangle* triangles, R
   normal = glm::normalize(multiplyMV(mesh.transform, glm::vec4(triangles[min_idx].n, 0.f)));
   outside = (glm::dot(rt.origin, normal) < 0);
   return min_t;
+}*/
+
+// traverse all the mesh to get intersection!
+__host__ __device__ float meshIntersectionTest(Geom mesh, Triangle* tris,
+	Ray r, glm::vec2 &uv, glm::vec3 &normal,
+	glm::mat3 &tangToWorld, bool &outside) {
+	int min_ind = -1;	// the nearest triangle id
+	float tmin = FLT_MAX;
+	glm::vec3 bari(0.f), minbari(0.f);
+
+	//traverse all the triangles
+	for (int i = mesh.T_startidx; i < mesh.T_endidx; i++) {
+		//the baryPosition output uses barycentric coordinates for the x and y components.The z component is the scalar factor for ray.
+		//That is, 1.0 - baryPosition.x - baryPosition.y = actual z barycentric coordinate
+		if (glm::intersectRayTriangle(r.origin, r.direction, tris[i].verts[0].pos, tris[i].verts[1].pos, tris[i].verts[2].pos, bari)) {
+			if (bari.z > 0.f && bari.z < tmin) {
+				min_ind = i;
+				tmin = bari.z;
+				minbari = bari;
+			}
+		}
+	}
+	//not hit anything
+	if (min_ind == -1) { return -1; }
+
+	normal = (1.0f - minbari.x - minbari.y) * tris[min_ind].verts[0].normal +
+		minbari.x * tris[min_ind].verts[1].normal +
+		minbari.y * tris[min_ind].verts[2].normal;
+	normal = glm::normalize(normal);
+
+	uv = (1.0f - minbari.x - minbari.y) * tris[min_ind].verts[0].uv +
+		minbari.x * tris[min_ind].verts[1].uv +
+		minbari.y * tris[min_ind].verts[2].uv;
+
+	//TODO: for calculating the normal
+	glm::vec3 interp = getPointOnRay(r, tmin);
+	glm::vec3 deltaPos1 = tris[min_ind].verts[1].pos - interp;
+	glm::vec3 deltaPos2 = tris[min_ind].verts[2].pos - interp;
+	glm::vec2 deltaUV1 = tris[min_ind].verts[1].uv - uv;
+	glm::vec2 deltaUV2 = tris[min_ind].verts[2].uv - uv;
+	glm::vec3 tangent = glm::normalize((deltaPos1*deltaUV2.y - deltaPos2 * deltaUV1.y) * (1.f / (deltaUV1.x*deltaUV2.y - deltaUV1.y*deltaUV2.x)));
+	glm::vec3 bitangent = glm::normalize((deltaPos2*deltaUV1.x - deltaPos1 * deltaUV2.x) * (1.f / (deltaUV1.x*deltaUV2.y - deltaUV1.y*deltaUV2.x)));
+	tangToWorld = glm::mat3(tangent, bitangent, normal);
+
+	return tmin;
+}
+
+#define MAX_BVH_DEPTH 64
+__host__ __device__ bool IntersectBVH(const Ray &ray, ShadeableIntersection * isect,
+	int & hit_tri_index,
+	const BVH_ArrNode *bvh_nodes,
+	const Triangle* primitives) {
+
+	if (bvh_nodes == nullptr) { return false; }
+
+	bool hit = false;
+	int isDirNeg[3] = { ray.direction.x < 0.f, ray.direction.y < 0.f, ray.direction.z < 0.f };
+	glm::vec3 invdir(1.0f / ray.direction.x, 1.0f / ray.direction.y, 1.0f / ray.direction.z);
+
+	int toVisitOffset = 0, curr_ind = 0;
+	int needToVisit[MAX_BVH_DEPTH];
+	while (true) {
+		const BVH_ArrNode *node = &bvh_nodes[curr_ind];
+		float temp_t = 0.f;
+		//check bounding box intersection
+		if (node->bounds.AABBIntersect2(ray, invdir)) {
+			if (node->primitive_count > 0) {												// leaf node
+				for (int i = 0; i < node->primitive_count; i++) {							// intersect test with each triangle in the nodes
+					ShadeableIntersection inter;
+					if (primitives[node->primitivesOffset + i].Intersect(ray, &inter)) {	// triangles intersect test
+						hit = true;
+						if (isect->t == -1.0f) {
+							(*isect) = inter;
+							hit_tri_index = primitives[node->primitivesOffset + i].id;
+						}
+						else {
+							if (inter.t < isect->t) {
+								(*isect) = inter;
+								hit_tri_index = primitives[node->primitivesOffset + i].id;
+							}
+						}
+					}
+				}
+				if (toVisitOffset == 0) { break; }
+				curr_ind = needToVisit[--toVisitOffset];
+			}
+			else {
+				// Trick: learn from hanming zhang, if toVisitOffset reaches maximum
+				// we don't want add more index to needToVisit Array
+				// we just give up this interior node and handle previous nodes instead 
+				if (toVisitOffset == MAX_BVH_DEPTH) {
+					curr_ind = needToVisit[--toVisitOffset];
+					continue;
+				}
+				// add index to nodes to visit
+				if (isDirNeg[node->axis]) {
+					needToVisit[toVisitOffset++] = curr_ind + 1;
+					curr_ind = node->rightchildoffset;
+				}
+				else {
+					needToVisit[toVisitOffset++] = node->rightchildoffset;
+					curr_ind = curr_ind + 1;
+				}
+			}
+		}
+		else {// do not hit anything
+			if (toVisitOffset == 0) { break; }
+			curr_ind = needToVisit[--toVisitOffset];
+		}
+	}
+	return hit;
 }
