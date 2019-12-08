@@ -360,7 +360,7 @@ __global__ void rt(int frame, int num_paths, int max_depth,
 
                 // color mask
 #if SHOW_TEXTURE 
-                segment.color *=  (material.texid != -1) ? texts[material.texid].getColor(uv) : material.color;
+                segment.color *=  (material.texid != -1) ? texts[material.texid].getColor(intersection.uv) : material.color;
 #else
                 segment.color *= material.color；
 #endif
