@@ -62,6 +62,7 @@ extern float ui_sintensity;
 extern float ui_lightradius;
 extern bool ui_blurvariance;
 extern bool ui_reducevar;
+extern bool ui_usekdtree;
 extern float ui_camera_speed_theta;
 extern float ui_camera_speed_phi;
 

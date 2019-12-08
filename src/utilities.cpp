@@ -110,3 +110,14 @@ std::istream& utilityCore::safeGetline(std::istream& is, std::string& t) {
         }
     }
 }
+
+void utilityCore::compareThreeVertex(const glm::vec3 &p1, const glm::vec3 &p2, const glm::vec3 &p3,
+    glm::vec3 &min, glm::vec3 &max) {
+    min.x = glm::min(p1.x, glm::min(p2.x, p3.x));
+    min.y = glm::min(p1.y, glm::min(p2.y, p3.y));
+    min.z = glm::min(p1.z, glm::min(p2.z, p3.z));
+
+    max.x = glm::max(p1.x, glm::max(p2.x, p3.x));
+    max.y = glm::max(p1.y, glm::max(p2.y, p3.y));
+    max.z = glm::max(p1.z, glm::max(p2.z, p3.z));
+}

@@ -192,7 +192,6 @@ bool init() {
         // Setup Dear ImGui context
         IMGUI_CHECKVERSION();
         ImGui::CreateContext();
-        ImGuiIO& io = ImGui::GetIO();
 
         // Setup Dear ImGui style
         ImGui::StyleColorsDark();
@@ -219,7 +218,7 @@ void drawGui(int windowWidth, int windowHeight) {
 
     // Dear imgui define
     {
-        ImVec2 minSize(600.f, 600.f);
+        ImVec2 minSize(300.f, 600.f);
         ImVec2 maxSize((float)windowWidth * 0.5, (float)windowHeight);
         ImGui::SetNextWindowSizeConstraints(minSize, maxSize);
 
@@ -227,7 +226,12 @@ void drawGui(int windowWidth, int windowHeight) {
         ImGui::SetNextWindowPos(windowPos);
 
         ImGui::Begin("Control Panel", 0, windowFlags);
-        ImGui::SetWindowFontScale(2);
+        ImGui::SetWindowFontScale(1);
+
+        // Capture keyboard
+        if (ImGui::IsKeyPressed(' ')) {
+            ImGui::SetWindowCollapsed(!ImGui::IsWindowCollapsed());
+        }
         
         ImGui::Checkbox("Auto-Resize", &ui_autoresize);
         if (ui_autoresize) {
@@ -248,6 +252,7 @@ void drawGui(int windowWidth, int windowHeight) {
                 ui_reset_denoiser = true;
             }
             ImGui::SliderInt("Max. Depth", &ui_tracedepth, 1, 10);
+            ImGui::Checkbox("Use KD-Tree", &ui_usekdtree);
             ImGui::Separator();
             ImGui::Checkbox("Trace Shadow Ray", &ui_shadowray);
             ImGui::SameLine();
@@ -257,7 +262,16 @@ void drawGui(int windowWidth, int windowHeight) {
         }
 
         if (ImGui::CollapsingHeader("Denosing", ImGuiTreeNodeFlags_DefaultOpen)) {
-            if (ImGui::Checkbox("Enable", &ui_denoise_enable)) {
+            if (ImGui::IsKeyPressed('D')) {
+                ui_denoise_enable = !ui_denoise_enable;
+            }
+            else if (ImGui::IsKeyPressed('T')) {
+                ui_temporal_enable = !ui_temporal_enable;
+            }
+            else if (ImGui::IsKeyPressed('S')) {
+                ui_spatial_enable = !ui_spatial_enable;
+            }
+            if (ImGui::Checkbox("Enable(D)", &ui_denoise_enable)) {
                 if (ui_denoise_enable) {
 
                 }
@@ -265,9 +279,9 @@ void drawGui(int windowWidth, int windowHeight) {
                     camchanged = true;
                 }
             }
-            ImGui::Checkbox("Temporal", &ui_temporal_enable);
+            ImGui::Checkbox("Temporal(T)", &ui_temporal_enable);
             ImGui::SameLine();
-            ImGui::Checkbox("Spatial", &ui_spatial_enable);
+            ImGui::Checkbox("Spatial(S)", &ui_spatial_enable);
             ImGui::Separator();
             ImGui::Text("Temporal Acc.");
             ImGui::SliderFloat("C. Alpha", &ui_color_alpha, 0.0f, 1.0f);
@@ -295,7 +309,7 @@ void drawGui(int windowWidth, int windowHeight) {
 
         if (ImGui::CollapsingHeader("Camera", ImGuiTreeNodeFlags_DefaultOpen))
         {
-            if (ImGui::Button("Reset Camera")) {
+            if (ImGui::IsKeyPressed('Z') || ImGui::Button("Reset Camera(Z)")) {
                 scene->resetCamera();
                 resetCamera();
             }
@@ -316,8 +330,10 @@ void drawGui(int windowWidth, int windowHeight) {
             ImGui::SliderFloat("Spd. Z", &ui_camera_speed_z, 0.0f, 0.5f);
             ImGui::SliderFloat("Spd. Theta", &ui_camera_speed_theta, 0.0f, 0.5f);
             ImGui::SliderFloat("Spd. Phi", &ui_camera_speed_phi, 0.0f, 0.5f);
-            ImGui::Checkbox("Automate Camera Motion", &ui_automate_camera);
-            
+            if (ImGui::IsKeyPressed('A')) {
+                ui_automate_camera = !ui_automate_camera;
+            }
+            ImGui::Checkbox("Automate Camera Motion(A)", &ui_automate_camera);
         }
 
         if (ImGui::CollapsingHeader("Debug View")) {
