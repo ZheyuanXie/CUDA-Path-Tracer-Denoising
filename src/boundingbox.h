@@ -2,13 +2,11 @@
 #include <cuda_runtime.h>
 #include "glm/glm.hpp"
 #include <vector>
-//#include "sceneStructs.h"
 
-struct Ray {
-	glm::vec3 origin;
-	glm::vec3 direction;
+extern struct Ray {
+    glm::vec3 origin;
+    glm::vec3 direction;
 };
-//extern struct Ray;
 
 class BoundingBox {
 public:

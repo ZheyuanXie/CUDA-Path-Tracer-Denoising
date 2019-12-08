@@ -51,5 +51,3 @@ glm::vec3 BoundingBox::getOffset(const glm::vec3 &p) const {
 	}
 	return offset;
 }
-
-

@@ -55,4 +55,3 @@ struct BVH_ArrNode {
 
 BVH_ArrNode* BuildBVHTree(int& totalNodes,std::vector<Triangle> &primitives);		   
 void DeleteBVH(BVH_ArrNode *nodes);
-

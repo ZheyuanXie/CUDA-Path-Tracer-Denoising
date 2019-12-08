@@ -93,14 +93,14 @@ glm::vec3 calculateRandomDirectionInHemisphere(
  */
 __host__ __device__
 void scatterRay(
-		PathSegment & pathSegment,
+        PathSegment & pathSegment,
         glm::vec3 intersect,
         glm::vec3 normal,
         const Material &m,
         unsigned int& seed
 #if SHOW_TEXTURE
-	, Texture * texutres
-	, glm::vec2 uv
+        , Texture * texutres
+        , glm::vec2 uv
 #endif
 ) {
     pathSegment.ray.origin = intersect + 1e-4f * normal;    // New ray shoot from intersection point

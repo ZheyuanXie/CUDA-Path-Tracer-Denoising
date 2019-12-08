@@ -18,10 +18,9 @@ private:
     ifstream fp_in;
     int loadMaterial(string materialid);
     int loadGeom(string objectid);
-    //int loadMesh(string filename);
+    void loadMesh(string objPath, Geom& newGeom, const glm::mat4& transform, const glm::mat4& invTranspose);
     int loadCamera();
-	void loadLight();
-	void loadMesh(string objPath, Geom& newGeom, const glm::mat4& transform, const glm::mat4& invTranspose);
+    void loadLight();
 
     glm::vec3 camera_position_default_;
     glm::vec3 camera_lookat_default_;
@@ -38,20 +37,20 @@ public:
         cam.up = camera_up_default_;
         cam.right = glm::normalize(glm::cross(cam.view, cam.up));
     }
-	string file_name;
 
+    string file_name;
+    
     std::vector<Geom> geoms;
     std::vector<Material> materials;
     RenderState state;
-	  
+      
 #if USE_KDTREE
-	BVH_ArrNode *bvh_nodes;
-	int Node_count = -1;
+    BVH_ArrNode *bvh_nodes;
+    int Node_count = -1;
 #endif
-	int current_Triangle_id;  	
-	std::vector<Triangle> triangles;
-	std::vector<BoundingBox> BoudningBoxs;
-	std::vector<Texture> textures;
-
-	std::vector<Light> lights;
+    int current_Triangle_id;  	
+    std::vector<Triangle> triangles;
+    std::vector<BoundingBox> BoudningBoxs;
+    std::vector<Texture> textures;
+    std::vector<Light> lights;
 };

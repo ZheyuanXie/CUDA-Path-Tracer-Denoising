@@ -5,7 +5,6 @@
 #include <thrust/random.h>
 #include <thrust/remove.h>
 #include <thrust/partition.h>
-#include <chrono>
 
 #include "sceneStructs.h"
 #include "scene.h"
@@ -97,9 +96,9 @@ static BVH_ArrNode* dev_bvh_nodes = NULL;
 #endif
 
 #if SHOW_TEXTURE
-static Texture* dev_texts = NULL;								  // STORE GPU TEXTURES
-static Texture* dev_nor_map = NULL;								  // STORE GPU NORMAL MAP	
-static Light * dev_lights = NULL;								  // LIGHT VECTOR
+static Texture* dev_texts = NULL;                                 // STORE GPU TEXTURES
+static Texture* dev_nor_map = NULL;                               // STORE GPU NORMAL MAP
+static Light * dev_lights = NULL;                                 // LIGHT VECTOR
 #endif
 
 void pathtraceInit(Scene *scene) {
@@ -110,16 +109,16 @@ void pathtraceInit(Scene *scene) {
     cudaMalloc(&dev_image, pixelcount * sizeof(glm::vec3));
     cudaMemset(dev_image, 0, pixelcount * sizeof(glm::vec3));
 
-  	cudaMalloc(&dev_paths, pixelcount * sizeof(PathSegment));
+      cudaMalloc(&dev_paths, pixelcount * sizeof(PathSegment));
 
-  	cudaMalloc(&dev_geoms, scene->geoms.size() * sizeof(Geom));
-  	cudaMemcpy(dev_geoms, scene->geoms.data(), scene->geoms.size() * sizeof(Geom), cudaMemcpyHostToDevice);
+      cudaMalloc(&dev_geoms, scene->geoms.size() * sizeof(Geom));
+      cudaMemcpy(dev_geoms, scene->geoms.data(), scene->geoms.size() * sizeof(Geom), cudaMemcpyHostToDevice);
 
-  	cudaMalloc(&dev_materials, scene->materials.size() * sizeof(Material));
-  	cudaMemcpy(dev_materials, scene->materials.data(), scene->materials.size() * sizeof(Material), cudaMemcpyHostToDevice);
+      cudaMalloc(&dev_materials, scene->materials.size() * sizeof(Material));
+      cudaMemcpy(dev_materials, scene->materials.data(), scene->materials.size() * sizeof(Material), cudaMemcpyHostToDevice);
 
-  	cudaMalloc(&dev_intersections, pixelcount * sizeof(ShadeableIntersection));
-  	cudaMemset(dev_intersections, 0, pixelcount * sizeof(ShadeableIntersection));
+      cudaMalloc(&dev_intersections, pixelcount * sizeof(ShadeableIntersection));
+      cudaMemset(dev_intersections, 0, pixelcount * sizeof(ShadeableIntersection));
 
     cudaMalloc(&dev_triangles, scene->triangles.size() * sizeof(Triangle));
     cudaMemcpy(dev_triangles, scene->triangles.data(), scene->triangles.size() * sizeof(Triangle), cudaMemcpyHostToDevice);
@@ -130,58 +129,58 @@ void pathtraceInit(Scene *scene) {
     cudaMemset(dev_denoised_image, 0, pixelcount * sizeof(glm::vec3));
 
 #if SHOW_TEXTURE
-	if (scene->textures.size() > 0) {
-		cudaMalloc(&dev_texts, scene->textures.size() * sizeof(Texture));
-		for (int i = 0; i < scene->textures.size(); i++) {
-			int w = scene->textures[i].width, h = scene->textures[i].height, com = scene->textures[i].components;
-			int total_size = w * h * com;
-			cudaMalloc(&(scene->textures[i].dev_image), total_size * sizeof(unsigned char));	// ALLOCATE THE TEXTURE DATA
-			cudaMemcpy(scene->textures[i].dev_image, scene->textures[i].image, total_size * sizeof(unsigned char), cudaMemcpyHostToDevice);
-		}
-		cudaMemcpy(dev_texts, scene->textures.data(), scene->textures.size() * sizeof(Texture), cudaMemcpyHostToDevice);
-	}
+    if (scene->textures.size() > 0) {
+        cudaMalloc(&dev_texts, scene->textures.size() * sizeof(Texture));
+        for (int i = 0; i < scene->textures.size(); i++) {
+            int w = scene->textures[i].width, h = scene->textures[i].height, com = scene->textures[i].components;
+            int total_size = w * h * com;
+            cudaMalloc(&(scene->textures[i].dev_image), total_size * sizeof(unsigned char));	// ALLOCATE THE TEXTURE DATA
+            cudaMemcpy(scene->textures[i].dev_image, scene->textures[i].image, total_size * sizeof(unsigned char), cudaMemcpyHostToDevice);
+        }
+        cudaMemcpy(dev_texts, scene->textures.data(), scene->textures.size() * sizeof(Texture), cudaMemcpyHostToDevice);
+    }
 #endif
 
 #if USE_KDTREE
-	Box_count = scene->BoudningBoxs.size();
-	if (scene->BoudningBoxs.size() > 0) {// World bounds of mesh
-		cudaMalloc(&dev_bounding, Box_count * sizeof(BoundingBox));
-		cudaMemcpy(dev_bounding, scene->BoudningBoxs.data(), Box_count * sizeof(BoundingBox), cudaMemcpyHostToDevice);
-	}
-	BVH_node_count = scene->Node_count;
-	if (BVH_node_count > 0) {//BVH Nodes
-		cudaMalloc(&dev_bvh_nodes, BVH_node_count * sizeof(BVH_ArrNode));
-		cudaMemcpy(dev_bvh_nodes, scene->bvh_nodes, BVH_node_count * sizeof(BVH_ArrNode), cudaMemcpyHostToDevice);
-	}
+    Box_count = scene->BoudningBoxs.size();
+    if (scene->BoudningBoxs.size() > 0) {// World bounds of mesh
+        cudaMalloc(&dev_bounding, Box_count * sizeof(BoundingBox));
+        cudaMemcpy(dev_bounding, scene->BoudningBoxs.data(), Box_count * sizeof(BoundingBox), cudaMemcpyHostToDevice);
+    }
+    BVH_node_count = scene->Node_count;
+    if (BVH_node_count > 0) {//BVH Nodes
+        cudaMalloc(&dev_bvh_nodes, BVH_node_count * sizeof(BVH_ArrNode));
+        cudaMemcpy(dev_bvh_nodes, scene->bvh_nodes, BVH_node_count * sizeof(BVH_ArrNode), cudaMemcpyHostToDevice);
+    }
 #endif
 
-	cudaMalloc(&dev_lights, scene->lights.size() * sizeof(Light));			// LIGHT BUFFER ALLOCATE MEMORY
-	cudaMemcpy(dev_lights, scene->lights.data(), scene->lights.size() * sizeof(Light), cudaMemcpyHostToDevice);
+    cudaMalloc(&dev_lights, scene->lights.size() * sizeof(Light));          // LIGHT BUFFER ALLOCATE MEMORY
+    cudaMemcpy(dev_lights, scene->lights.data(), scene->lights.size() * sizeof(Light), cudaMemcpyHostToDevice);
 
     checkCUDAError("pathtraceInit");
 }
 
 void pathtraceFree() {
     cudaFree(dev_image);  // no-op if dev_image is null
-  	cudaFree(dev_paths);
-  	cudaFree(dev_geoms);
-  	cudaFree(dev_materials);
-  	cudaFree(dev_intersections);
+      cudaFree(dev_paths);
+      cudaFree(dev_geoms);
+      cudaFree(dev_materials);
+      cudaFree(dev_intersections);
 
     cudaFree(dev_triangles);
     cudaFree(dev_gbuffer);
     cudaFree(dev_denoised_image);
 
 #if USE_KDTREE
-	if (Box_count>0) { cudaFree(dev_bounding); }
-	if (BVH_node_count>0) { cudaFree(dev_bvh_nodes); }
+    if (Box_count>0) { cudaFree(dev_bounding); }
+    if (BVH_node_count>0) { cudaFree(dev_bvh_nodes); }
 #endif
 
 #if SHOW_TEXTURE
-	cudaFree(dev_texts);
-	cudaFree(dev_nor_map);
+    cudaFree(dev_texts);
+    cudaFree(dev_nor_map);
 #endif
-	cudaFree(dev_lights);
+    cudaFree(dev_lights);
 
     checkCUDAError("pathtraceFree");
 }
@@ -190,23 +189,16 @@ void pathtraceFree() {
 // Generate PathSegments with rays from the camera through the screen into the scene, which is the first bounce of rays.
 __global__ void generateRayFromCamera(Camera cam, int traceDepth, PathSegment* pathSegments)
 {
-	int x = (blockIdx.x * blockDim.x) + threadIdx.x;
-	int y = (blockIdx.y * blockDim.y) + threadIdx.y;
+    int x = (blockIdx.x * blockDim.x) + threadIdx.x;
+    int y = (blockIdx.y * blockDim.y) + threadIdx.y;
 
-	if (x < cam.resolution.x && y < cam.resolution.y) {
-		int index = x + (y * cam.resolution.x);
+    if (x < cam.resolution.x && y < cam.resolution.y) {
+        int index = x + (y * cam.resolution.x);
 
         // initial ray
-		PathSegment & segment = pathSegments[index];
+        PathSegment & segment = pathSegments[index];
         segment.ray.origin = cam.position;
-
-#if ENABLE_MIS_LIGHTING
-		segment.color = glm::vec3(0.0f, 0.0f, 0.0f);
-		segment.throughtcolor = glm::vec3(1.0f, 1.0f, 1.0f);
-#else
-		segment.color = glm::vec3(1.0f, 1.0f, 1.0f);
-		segment.throughtcolor = glm::vec3(0.0f, 0.0f, 0.0f);
-#endif
+        segment.color = glm::vec3(1.0f);
         segment.ray.direction = glm::normalize(cam.view
         - cam.right * cam.pixelLength.x * ((float)x - (float)(cam.resolution.x * 0.5f - 0.5f))
         - cam.up * cam.pixelLength.y * ((float)y - (float)(cam.resolution.y * 0.5f - 0.5f))
@@ -214,72 +206,69 @@ __global__ void generateRayFromCamera(Camera cam, int traceDepth, PathSegment* p
         segment.pixelIndex = index;
         segment.remainingBounces = traceDepth;
         segment.diffuse = false;
-	}
+    }
 }
 
 __host__ __device__
 bool computeIntersection(Ray& ray, ShadeableIntersection& intersection
-	, Geom * geoms
-	, int geoms_size
-	, Triangle* triangles
+    , Geom * geoms
+    , int geoms_size
+    , Triangle* triangles
 #if USE_KDTREE
-	, BoundingBox * worldBounds
-	, BVH_ArrNode * nodes
+    , BoundingBox * worldBounds
+    , BVH_ArrNode * nodes
 #endif
-	) {
+    ) {
     // closest hit
     float t_min = FLT_MAX;
     int hit_geom_index = -1;
-	int hit_tri_index = -1;
+    int hit_tri_index = -1;
     glm::vec3 intersect_point;
     glm::vec3 normal;
-	glm::vec2 uv;
+    glm::vec2 uv;
     bool outside = true;
 
     float t;
     glm::vec3 tmp_intersect;
     glm::vec3 tmp_normal;
-	glm::vec2 tmp_uv;
-	glm::mat3 tmp_tangent_to_world;
+    glm::vec2 tmp_uv;
+    glm::mat3 tmp_tangent_to_world;
     bool tmp_outside;
 
-    for (int i = 0; i < geoms_size; i++) {
+    for (int i = 0; i < geoms_size; i++) 
+    {
         Geom & geom = geoms[i];
         if (geom.type == CUBE) t = boxIntersectionTest(geom, ray, tmp_intersect, tmp_normal, tmp_outside);
         else if (geom.type == SPHERE) t = sphereIntersectionTest(geom, ray, tmp_intersect, tmp_normal, tmp_outside);
-#if !USE_KDTREE        
-		else if (geom.type == MESH) {//t = meshIntersectionTest(geom, triangles, ray, tmp_intersect, tmp_normal, tmp_outside);
-			float temp;
-			if (worldBounds[geom.worldBoundIdx].Intersect(pathSegment.ray, &temp)) {
-				t = meshIntersectionTest(geom, triangles, ray, tmp_uv, tmp_normal, tmp_tangent_to_world, outside);
-			}
-			else {
-				t = -1.0f;
-			}
-		}
+#if !USE_KDTREE
+        else if (geom.type == MESH) {
+            float temp;
+            t = -1.0f;
+            if (worldBounds[geom.worldBoundIdx].Intersect(pathSegment.ray, &temp)) {
+                t = meshIntersectionTest(geom, triangles, ray, tmp_uv, tmp_normal, tmp_tangent_to_world, outside);
+            }
+        }
 #else
-		else if (geom.type == MESH) {
-			ShadeableIntersection isect;
-			isect.t = FLT_MAX;
-			if (IntersectBVH(ray, &isect, hit_tri_index, nodes, triangles)) {
-				if (hit_tri_index >= geom.T_startidx && hit_tri_index < geom.T_endidx) {
-					t = isect.t;
-					tmp_uv = isect.uv;
-					tmp_normal = isect.surfaceNormal;
-				}
-				else { t = -1.0f; }
-			}
-			else { t = -1.0f; }
-		}
+        else if (geom.type == MESH) {
+            ShadeableIntersection isect;
+            isect.t = FLT_MAX;
+            t = -1.0f;
+            if (IntersectBVH(ray, &isect, hit_tri_index, nodes, triangles)) {
+                if (hit_tri_index >= geom.T_startidx && hit_tri_index < geom.T_endidx) {
+                    t = isect.t;
+                    tmp_uv = isect.uv;
+                    tmp_normal = isect.surfaceNormal;
+                }
+            }
+        }
 #endif
-		// update closest hit
+        // update closest hit
         if (t > 0.0f && t < t_min) {
             t_min = t;
             hit_geom_index = i;
             intersect_point = tmp_intersect;
             normal = tmp_normal;
-			uv = tmp_uv;
-            //outside = tmp_outside;
+            uv = tmp_uv;
         }
     }
 
@@ -293,9 +282,8 @@ bool computeIntersection(Ray& ray, ShadeableIntersection& intersection
         intersection.t = t_min;
         intersection.materialId = geoms[hit_geom_index].materialid;
         intersection.surfaceNormal = normal;
-		intersection.uv = uv;
+        intersection.uv = uv;
         intersection.geomId = hit_geom_index;
-        //intersection.outside = outside;
         return true;
     }
 }
@@ -320,16 +308,15 @@ void computeShadowRay(Ray& shadowRay, glm::vec3 originPos, Geom& light, float li
 __global__ void rt(int frame, int num_paths, int max_depth,
     PathSegment * pathSegments, ShadeableIntersection * intersections, 
     Geom * geoms, int geoms_size, Triangle* triangles, Material * materials, GBufferTexel * gbuffer, glm::vec3 * image,
-    bool trace_shadowray, bool reduce_var, float sintensity, float lightSampleRadius, 
-	bool denoise
+    bool trace_shadowray, bool reduce_var, float sintensity, float lightSampleRadius, bool denoise
 #if USE_KDTREE
-	, BoundingBox * boudings
-	, BVH_ArrNode * bvhnodes
+    , BoundingBox * boudings
+    , BVH_ArrNode * bvhnodes
 #endif
 #if SHOW_TEXTURE
-	, Texture* texts
+    , Texture* texts
 #endif
-	)
+    )
 {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
     if (idx < num_paths)
@@ -341,19 +328,19 @@ __global__ void rt(int frame, int num_paths, int max_depth,
         // compute first intersection and populate g-buffer
         bool hit = computeIntersection(segment.ray, intersection, geoms, geoms_size, triangles
 #if USE_KDTREE
-			, boudings
-			, bvhnodes
+            , boudings
+            , bvhnodes
 #endif
-		);
+        );
         gbuffer[idx].position = segment.ray.origin + intersection.t * segment.ray.direction;
         gbuffer[idx].normal = intersection.surfaceNormal;
         gbuffer[idx].geomId = intersection.geomId;
 
-		gbuffer[idx].albedo = materials[intersection.materialId].color;
+        gbuffer[idx].albedo = materials[intersection.materialId].color;
 #if SHOW_TEXTURE
-		if (materials[intersection.materialId].texid != -1) { 
-			gbuffer[idx].albedo *= texts[materials[intersection.materialId].texid].getColor(intersection.uv); 
-		}
+        if (materials[intersection.materialId].texid != -1) { 
+            gbuffer[idx].albedo *= texts[materials[intersection.materialId].texid].getColor(intersection.uv); 
+        }
 #endif
         for (int depth = 1; depth <= max_depth; depth++) {
             if (!hit) break;
@@ -370,14 +357,13 @@ __global__ void rt(int frame, int num_paths, int max_depth,
             else {                            // Hit material (scatter ray)
                 glm::vec3 intersectionPos = segment.ray.origin + intersection.t * segment.ray.direction;
                 glm::vec3 &intersectionNormal = intersection.surfaceNormal;
-				glm::vec2 uv = intersection.uv;
+
                 // color mask
-                //segment.color *= material.color;
-				glm::vec3 col = material.color;
 #if SHOW_TEXTURE 
-				if (material.texid != -1) { col *= texts[material.texid].getColor(uv); }
+                segment.color *=  (material.texid != -1) ? texts[material.texid].getColor(uv) : material.color;
+#else
+                segment.color *= material.color；
 #endif
-				segment.color *= col;
                 glm::clamp(segment.color, glm::vec3(0.0f), glm::vec3(1.0f));
 
                 // trace shadow ray
@@ -395,10 +381,10 @@ __global__ void rt(int frame, int num_paths, int max_depth,
                     ShadeableIntersection shadowRayIntersection;
                     bool shadowRayHit = computeIntersection(shadowRay, shadowRayIntersection, geoms, geoms_size, triangles
 #if USE_KDTREE
-						, boudings
-						, bvhnodes
+                        , boudings
+                        , bvhnodes
 #endif
-					);
+                    );
 
                     // compute color
                     if (shadowRayIntersection.geomId == lightIdx) {
@@ -407,7 +393,6 @@ __global__ void rt(int frame, int num_paths, int max_depth,
                             glm::vec3 shadowRayIntersectionPos = shadowRay.origin + shadowRay.direction * shadowRayIntersection.t;
                             float diffuse = glm::max(0.0f, glm::dot(shadowRay.direction, intersectionNormal));
                             float shadowIntensity = sintensity / pow(shadowRayExpectDist, 2.0f);
-
                             accumulatedColor += segment.color * material.color
                                                 * shadowRayMaterial.emittance * shadowRayMaterial.color
                                                 * shadowIntensity * diffuse;
@@ -418,16 +403,16 @@ __global__ void rt(int frame, int num_paths, int max_depth,
                 if (depth < max_depth) {
                     scatterRay(segment, intersectionPos, intersectionNormal, material, seed
 #if SHOW_TEXTURE
-					, texts
-					, uv
+                    , texts
+                    , intersection.uv
 #endif
-					);
+                    );
                     hit = computeIntersection(segment.ray, intersection, geoms, geoms_size, triangles
 #if USE_KDTREE
-					, boudings
-					, bvhnodes
+                    , boudings
+                    , bvhnodes
 #endif
-					);
+                    );
                 }
             }
         }
@@ -467,14 +452,14 @@ void pathtrace(uchar4 *pbo, int frame) {
         dev_triangles, dev_materials, dev_gbuffer, dev_image, 
         ui_shadowray, ui_reducevar, ui_sintensity, ui_lightradius, ui_denoise_enable
 #if USE_KDTREE
-		, dev_bounding
-		, dev_bvh_nodes
+        , dev_bounding
+        , dev_bvh_nodes
 #endif
 #if SHOW_TEXTURE
-		, dev_texts
+        , dev_texts
 #endif
-		);
-		checkCUDAError("ray tracing");
+        );
+        checkCUDAError("ray tracing");
 
     ////////////////////////// Denosing ///////////////////////////////////////
 

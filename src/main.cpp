@@ -43,6 +43,7 @@ bool ui_shadowray = true;
 bool ui_reducevar = true;
 float ui_sintensity = 2.7f;
 float ui_lightradius = 1.4f;
+bool ui_usekdtree = true;
 
 bool ui_denoise_enable = false;
 bool ui_temporal_enable = false;
@@ -198,6 +199,8 @@ void runCuda() {
 }
 
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+    renderState = &scene->state;
+    Camera &cam = renderState->camera;
     if (action == GLFW_PRESS) {
       switch (key) {
       case GLFW_KEY_ESCAPE:
@@ -207,13 +210,41 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
       case GLFW_KEY_S:
         saveImage();
         break;
-      case GLFW_KEY_SPACE:
+      case GLFW_KEY_R:
         camchanged = true;
-        renderState = &scene->state;
-        Camera &cam = renderState->camera;
         cam.lookAt = ogLookAt;
         break;
+      
       }
+    }
+   
+    if (action == GLFW_REPEAT || action == GLFW_PRESS) {
+        switch (key) {
+        case GLFW_KEY_UP:
+            camchanged = true;
+            cam.lookAt += cam.view * 0.5f;
+            break;
+        case GLFW_KEY_DOWN:
+            camchanged = true;
+            cam.lookAt -= cam.view * 0.5f;
+            break;
+        case GLFW_KEY_LEFT:
+            camchanged = true;
+            cam.lookAt -= cam.right * 0.5f;
+            break;
+        case GLFW_KEY_RIGHT:
+            camchanged = true;
+            cam.lookAt += cam.right * 0.5f;
+            break;
+        case GLFW_KEY_COMMA:
+            camchanged = true;
+            phi -= 0.1f;
+            break;
+        case GLFW_KEY_PERIOD:
+            camchanged = true;
+            phi += 0.1f;
+            break;
+        }
     }
 }
 

@@ -185,7 +185,3 @@ BVH_ArrNode* BuildBVHTree(int& totalNodes, std::vector<Triangle> &tris) {
 void DeleteBVH(BVH_ArrNode *nodes) {
 	delete[] nodes;
 }
-
-
-
-
