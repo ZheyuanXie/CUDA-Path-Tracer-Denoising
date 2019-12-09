@@ -268,7 +268,7 @@ void drawGui(int windowWidth, int windowHeight) {
             else if (ImGui::IsKeyPressed('T')) {
                 ui_temporal_enable = !ui_temporal_enable;
             }
-            else if (ImGui::IsKeyPressed('S')) {
+            else if (ImGui::IsKeyPressed('F')) {
                 ui_spatial_enable = !ui_spatial_enable;
             }
             if (ImGui::Checkbox("Enable(D)", &ui_denoise_enable)) {
@@ -279,9 +279,26 @@ void drawGui(int windowWidth, int windowHeight) {
                     camchanged = true;
                 }
             }
+            ImGui::SameLine();
+            if (ImGui::Button("None")) {
+                ui_temporal_enable = false;
+                ui_spatial_enable = false;
+                ui_sepcolor = false;
+                ui_addcolor = false;
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("All")) {
+                ui_temporal_enable = true;
+                ui_spatial_enable = true;
+                ui_sepcolor = true;
+                ui_addcolor = true;
+            }
             ImGui::Checkbox("Temporal(T)", &ui_temporal_enable);
             ImGui::SameLine();
-            ImGui::Checkbox("Spatial(S)", &ui_spatial_enable);
+            ImGui::Checkbox("Spatial(F)", &ui_spatial_enable);
+            ImGui::Checkbox("Rmv 1st Albedo", &ui_sepcolor);
+            ImGui::SameLine();
+            ImGui::Checkbox("Add 1st Albedo", &ui_addcolor);
             ImGui::Separator();
             ImGui::Text("Temporal Acc.");
             ImGui::SliderFloat("C. Alpha", &ui_color_alpha, 0.0f, 1.0f);

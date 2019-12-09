@@ -41,7 +41,7 @@ EMITTANCE   0
 // Specular white
 MATERIAL 4
 RGB         .98 .98 .98
-SPECEX      0
+SPECEX      5
 SPECRGB     .98 .98 .98
 REFL        1
 REFR        0
@@ -159,15 +159,15 @@ SCALE       3 3 3
 // Object
 OBJECT 7
 cube
-material 1
+material 4
 TRANS       -1 2 -1
 ROTAT       0 45 0
 SCALE       3 3 3
 
 // Object
 OBJECT 8
-cube
-material 6
+sphere
+material 4
 TRANS       -2 1 3
 ROTAT       0 30 0
 SCALE       2 2 2
@@ -175,7 +175,7 @@ SCALE       2 2 2
 // Object
 OBJECT 9
 cube
-material 4
+material 6
 TRANS       2 1 3.5
 ROTAT       0 60 0
 SCALE       1.5 1.5 1.5

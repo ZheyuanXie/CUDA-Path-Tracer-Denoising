@@ -95,6 +95,7 @@ struct PathSegment {
     int pixelIndex;
     int remainingBounces;
     bool diffuse;
+    bool specular;
 };
 
 // Use with a corresponding PathSegment to do:
@@ -113,6 +114,7 @@ struct GBufferTexel {
     glm::vec3 normal;
     glm::vec3 position;
     glm::vec3 albedo;
+    glm::vec3 ialbedo;
     int geomId;
 };
 

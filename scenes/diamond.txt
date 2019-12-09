@@ -6,7 +6,7 @@ SPECRGB     0 0 0
 REFL        0
 REFR        0
 REFRIOR     0
-EMITTANCE   5
+EMITTANCE   10
 
 // Diffuse white
 MATERIAL 1
@@ -137,7 +137,7 @@ SCALE       .01 10 10
 // Right wall
 OBJECT 5
 cube
-material 7
+material 2
 TRANS       5 5 0
 ROTAT       0 0 0
 SCALE       .01 10 10

@@ -65,6 +65,8 @@ extern bool ui_reducevar;
 extern bool ui_usekdtree;
 extern float ui_camera_speed_theta;
 extern float ui_camera_speed_phi;
+extern bool ui_sepcolor;
+extern bool ui_addcolor;
 
 void runCuda();
 void resetCamera();

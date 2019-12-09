@@ -39,7 +39,7 @@ int height;
 bool ui_run = true;
 bool ui_step = false;
 bool ui_reset_denoiser = false;
-int ui_tracedepth = 8;
+int ui_tracedepth = 4;
 bool ui_shadowray = true;
 bool ui_reducevar = true;
 float ui_sintensity = 2.7f;
@@ -53,11 +53,13 @@ bool ui_spatial_enable = false;
 float ui_color_alpha = 0.2;
 float ui_moment_alpha = 0.2;
 bool ui_blurvariance = true;
-float ui_sigmal = 0.70f;
+float ui_sigmal = 0.45f;
 float ui_sigmax = 0.35f;
 float ui_sigman = 0.2f;
 int ui_atrous_nlevel = 5;   // How man levels of A-trous filter used in denoising?
 int ui_history_level = 1;   // Which level of A-trous output is sent to history buffer?
+bool ui_sepcolor = false;
+bool ui_addcolor = false;
 
 // Camera
 bool ui_automate_camera = false;

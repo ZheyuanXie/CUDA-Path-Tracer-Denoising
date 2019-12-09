@@ -75,8 +75,8 @@ void denoiseFree() {
 
 // A-Trous Filter
 __global__ void ATrousFilter(glm::vec3 * colorin, glm::vec3 * colorout, float * variance,
-                             GBufferTexel * gBuffer, glm::ivec2 res, int level,
-                             float sigma_c, float sigma_n, float sigma_x, bool blur_variance)
+                             GBufferTexel * gBuffer, glm::ivec2 res, int level, bool is_last,
+                             float sigma_c, float sigma_n, float sigma_x, bool blur_variance, bool addcolor)
 {
     // 5x5 A-Trous kernel
     float h[25] = { 1.0 / 256.0, 1.0 / 64.0, 3.0 / 128.0, 1.0 / 64.0, 1.0 / 256.0,
@@ -161,6 +161,10 @@ __global__ void ATrousFilter(glm::vec3 * colorin, glm::vec3 * colorout, float * 
             variance[p] = variance_sum / weights_squared_sum;
         } else {
             colorout[p] = colorin[p];
+        }
+
+        if (is_last && addcolor) {
+            colorout[p] *= gBuffer[p].albedo * gBuffer[p].ialbedo;
         }
     }
 }
@@ -382,7 +386,8 @@ void denoise(glm::vec3 * output, glm::vec3 * input, GBufferTexel * gbuffer) {
             for (int level = 1; level <= ui_atrous_nlevel; level++) {
                 glm::vec3* src = (level == 1) ? dev_color_history : dev_temp[level % 2];
                 glm::vec3* dst = (level == ui_atrous_nlevel) ? output : dev_temp[(level + 1) % 2];
-                ATrousFilter<<<blocksPerGrid2d, blockSize2d>>>(src, dst, dev_variance, gbuffer, cam.resolution, level, ui_sigmal, ui_sigman, ui_sigmax, ui_blurvariance);
+                ATrousFilter<<<blocksPerGrid2d, blockSize2d>>>(src, dst, dev_variance, gbuffer, cam.resolution, level, (level == ui_atrous_nlevel),
+                                                               ui_sigmal, ui_sigman, ui_sigmax, ui_blurvariance, (ui_sepcolor && ui_addcolor));
                 if (level == ui_history_level) cudaMemcpy(dev_color_history, dst, pixelcount * sizeof(glm::vec3), cudaMemcpyDeviceToDevice);
             }
         }
