@@ -9,14 +9,9 @@ Physically based monte-carlo path tracing can produce photo-realistc rendering o
 *Signal processing* and *Accumulation* are two major techniques of denosing. Signal processing techniques blur out noise by applying spatial filters or machine learning to the output; Accumulation techniques make it possible to reuse samples in a moving scene by associating pixel between frames. *Spatio-Temporal Variance Guided Filter* [Schied 2017] combines these two techniques and enables high quaility real-time path tracing for dynamic scenes. 
 
 ## Demo scenes
-
 ![](img/demo.gif)
 
-
-
 <img src="img/chairtest2.gif" style="zoom:71%;" />
-
-
 
 <img src="img/large1.gif" style="zoom:51%;" />
 
@@ -73,6 +68,37 @@ When we increase the filter count of A-Tours, the time costing increase. That's 
  ```
  4. Configure the project in `Visual Studio 2017` and `x64`, then click Generate.
  5. Open Visual Studio project and build in release mode.
+
+## Kernel-Predicting Convolutional Networks for Denoising Monte Carlo Renderings
+
+![network](img/network.png)
+
+### Overview
+On the machine learning side of denoising, we adopt the paper with the network architecture above to denoise. Particularly, the diffuse and specular components are trained to denoise separately before they are combined together to reconstruct the original image. We adopt the KPCN mode of the network, which means we will yield a kernel for denoising the input images. This is proven by the authors to converge 5-6x faster than directly yielding denoised images.
+
+### Input Components
+
+For both the diffuse component inputs and the specular ones, the inputs to the network consist of the following channel:
+* diffuse/specular image (32 spp), gradients in both directions, variance
+* gradients of depth in both directions
+* gradients of normal in both directions
+* gradients of albedo in both directions
+* ground truth diffuse/specular image (550 spp)
+
+The diffuse components are preprocessed by dividing by the albedo to only keep the illumination map, while the specular components go through logarithmic transform to reduce the range of pixel values for more stable training.
+
+
+### Training
+
+Both subnetworks consist of 9 Convolutional layers, optimized by ADAM optimizer with a batch-size of 16, learning rate of 1e-4 for specular network and 1e-5 for diffuse network. We train for 10 epochs in total.
+
+| noisy input - 32spp | denoised - 32spp | GT - 550spp |
+| - | - | - |
+| ![network](img/noisy.png) | ![network](img/denoised.png) | ![network](img/gt.png) |
+
+
+![loss](img/loss.png)
+
 
 ## Team
  - Zheyuan Xie

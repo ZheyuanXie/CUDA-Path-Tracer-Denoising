@@ -41,7 +41,7 @@ EMITTANCE   0
 // Specular white
 MATERIAL 4
 RGB         .98 .98 .98
-SPECEX      0
+SPECEX      5
 SPECRGB     .98 .98 .98
 REFL        1
 REFR        0
@@ -79,6 +79,17 @@ REFR        0
 REFRIOR     0
 EMITTANCE   0
 
+// Back Wall with Penn Logo
+MATERIAL 8
+RGB         0.98 0.98 0.98
+SPECEX      0
+SPECRGB     0 0 0
+REFL        0
+REFR        0
+REFRIOR     0
+EMITTANCE   0
+TEXTURE     wallpaper.jpg
+
 // Camera
 CAMERA
 RES         600 600
@@ -114,11 +125,12 @@ SCALE       .01 10 10
 
 // Back wall
 OBJECT 3
-cube
-material 4
-TRANS       0 5 -5
-ROTAT       0 90 0
-SCALE       .01 10 10
+mesh
+material 8
+TRANS       0 3.9 -4.8
+ROTAT       90 0 0
+SCALE       12 1 12
+wall_x.obj
 
 // Left wall
 OBJECT 4
@@ -147,15 +159,15 @@ SCALE       3 3 3
 // Object
 OBJECT 7
 cube
-material 1
+material 4
 TRANS       -1 2 -1
 ROTAT       0 45 0
 SCALE       3 3 3
 
 // Object
 OBJECT 8
-cube
-material 6
+sphere
+material 4
 TRANS       -2 1 3
 ROTAT       0 30 0
 SCALE       2 2 2
@@ -163,7 +175,7 @@ SCALE       2 2 2
 // Object
 OBJECT 9
 cube
-material 4
+material 6
 TRANS       2 1 3.5
 ROTAT       0 60 0
 SCALE       1.5 1.5 1.5

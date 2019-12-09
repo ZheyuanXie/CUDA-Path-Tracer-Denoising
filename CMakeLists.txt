@@ -75,6 +75,8 @@ set(headers
     src/utilities.h
     src/tiny_obj_loader.h
     src/denoise.h
+    src/boundingbox.h
+    src/bvhtree.h
     )
 
 set(sources
@@ -88,6 +90,8 @@ set(sources
     src/utilities.cpp
     src/tiny_obj_loader.cc
     src/denoise.cu
+    src/boundingbox.cpp
+    src/bvhtree.cpp
     src/imgui/imconfig.h
     src/imgui/imgui.cpp
     src/imgui/imgui.h
