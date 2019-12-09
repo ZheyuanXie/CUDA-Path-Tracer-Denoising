@@ -3,19 +3,27 @@ CUDA SVGF
 ![Demo (Cornell Box)](img/banner.png)
 
 ## Overview
+
 Physically based monte-carlo path tracing can produce photo-realistc rendering of computer graphics scenes. However, even with today's hardware it is impossible to converge a scene quickly and meet the performance requirement for real-time interactive application such as games. To bring path tracing to real-time, we reduce sample counts per pixel to 1 and apply post-processing to eliminate noise.
 
-*Signal processing* and *Accumulation* are two major techniques of denosing. Signal processing techniques blur out noise by applying spatial filters or machine learning to the output; Accumulation techniques make it possible to reuse samples in a moving scene by associating pixel between frames. *Spatio-Temporal Variance Guided Filter* [Schied 2017] combines these two techniques and enables high quaility real-time path tracing for dynamic scenes.
+*Signal processing* and *Accumulation* are two major techniques of denosing. Signal processing techniques blur out noise by applying spatial filters or machine learning to the output; Accumulation techniques make it possible to reuse samples in a moving scene by associating pixel between frames. *Spatio-Temporal Variance Guided Filter* [Schied 2017] combines these two techniques and enables high quaility real-time path tracing for dynamic scenes. 
+
+## Demo scenes
+![](img/demo.gif)
+
+<img src="img/chairtest2.gif" style="zoom:71%;" />
+
+<img src="img/large1.gif" style="zoom:51%;" />
 
 ## SVGF Pipeline
 ![Pipeline](img/svgf.png)
 
 ### Path Tracing
-The project is developed based on [CIS 565 CUDA Path Tracer](https://github.com/ZheyuanXie/Project3-CUDA-Path-Tracer).
+The project is developed based on [CIS 565 CUDA Path Tracer](https://github.com/ZheyuanXie/Project3-CUDA-Path-Tracer). 
 
 ### Temporal Accumulation
 To reuse samples from the previous frame, we reproject each pixel sample to its prior frame and calculate its screen space coordinate. This is completed in the following steps:
-1. Find world space position of the current frame in G-buffer.
+1. Find world space position of the current frame in G-buffer. 
 2. Transform from current world space to the previous clip space using the stored camera view matrix.
 3. Transform from previous clip space to previous screen space using perspective projection.
 
@@ -29,6 +37,20 @@ The spatial filtering is accomplished by a-trous wavelet transform. As illustrat
 A set of edge stopping functions prevent the filter from overblurring important details. Three edge-stopping functions based on position, normal, and luminance are used as in *Edge-avoiding À-Trous wavelet transform for fast global illumination filtering*  [Dammertz et al. 2010]. The standard deviation term in luminance edge-stopping function is based on variance estimation. This will guide the filter to blur more in regions with more uncertainty, i.e. large variance.
 
 ## Performance
+
+In the SVGF project, our codes mainly falls into two parts. The tracing part and the filtering one. Here, we record their time consuming.
+
+![](img/one_scene.png)
+
+We test in the middle scene,  as the chart shows, we spend lots of time in tracing the scene. The Denoise part only takes around 7% of time.
+
+![](img/different_scene.png)
+
+In different scenes, as the mesh count increases, the time cost of tracing increase rapidly. However, the time cost of A-Tours filtering seems to be similar in our test cases. 
+
+![](img/count_increase.png)
+
+When we increase the filter count of A-Tours, the time costing increase. That's easy to come up with since we do the filtering more times. 
 
 ## Build Instruction
  1. Clone this repository.
