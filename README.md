@@ -20,11 +20,7 @@ Physically based monte-carlo path tracing can produce photo-realistc rendering o
 
 ## Demo
 
-![](img/demo.gif)
-
 ![](img/chairtest2.gif)
-
-![](img/large1.gif)
 
 ## Path Tracing
 The project is developed based on [CIS 565 Project 3](https://github.com/ZheyuanXie/Project3-CUDA-Path-Tracer). Addtion to the project 3, we implemented texture mapping and bounding volume hierarchy to accelerate path tracing for complex meshes. To reduce sample variance, if the ray hit matte surface, we trace a shadow ray directly to the light.
