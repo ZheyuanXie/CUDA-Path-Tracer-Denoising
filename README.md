@@ -3,9 +3,22 @@ CUDA SVGF
 ![Demo (Cornell Box)](img/banner.png)
 
 ## Overview
+
 Physically based monte-carlo path tracing can produce photo-realistc rendering of computer graphics scenes. However, even with today's hardware it is impossible to converge a scene quickly and meet the performance requirement for real-time interactive application such as games. To bring path tracing to real-time, we reduce sample counts per pixel to 1 and apply post-processing to eliminate noise.
 
 *Signal processing* and *Accumulation* are two major techniques of denosing. Signal processing techniques blur out noise by applying spatial filters or machine learning to the output; Accumulation techniques make it possible to reuse samples in a moving scene by associating pixel between frames. *Spatio-Temporal Variance Guided Filter* [Schied 2017] combines these two techniques and enables high quaility real-time path tracing for dynamic scenes. 
+
+## Demo scenes
+
+![](img/demo.gif)
+
+
+
+<img src="img/chairtest2.gif" style="zoom:71%;" />
+
+
+
+<img src="img/large1.gif" style="zoom:51%;" />
 
 ## SVGF Pipeline
 ![Pipeline](img/svgf.png)
