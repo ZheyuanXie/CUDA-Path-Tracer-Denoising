@@ -206,6 +206,7 @@ bool init() {
 
 static ImGuiWindowFlags windowFlags= ImGuiWindowFlags_None | ImGuiWindowFlags_NoMove;
 static bool ui_autoresize = true;
+static bool ui_hide = false;
 
 void drawGui(int windowWidth, int windowHeight) {
     // Dear imgui new frame
@@ -222,8 +223,11 @@ void drawGui(int windowWidth, int windowHeight) {
         ImVec2 maxSize((float)windowWidth * 0.5, (float)windowHeight);
         ImGui::SetNextWindowSizeConstraints(minSize, maxSize);
 
-        ImVec2 windowPos(0.0f, 0.0f);
-        ImGui::SetNextWindowPos(windowPos);
+        ImGui::SetNextWindowPos(ui_hide ? ImVec2(-1000.f, -1000.f) : ImVec2(0.0f, 0.0f));
+
+        if (ImGui::IsKeyPressed('H')) {
+            ui_hide = !ui_hide;
+        }
 
         ImGui::Begin("Control Panel", 0, windowFlags);
         ImGui::SetWindowFontScale(1);

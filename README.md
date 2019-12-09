@@ -1,6 +1,17 @@
 CUDA SVGF
 ================
+**Zheyuan Xie** [[GitHub](https://github.com/ZheyuanXie)] [[LinkedIn](https://www.linkedin.com/in/zheyuan-xie)]
+, **Yan Dong** [[GitHub](https://github.com/coffeiersama)] [[LinkedIn](https://www.linkedin.com/in/yan-dong-572b1113b)]
+, **Weiqi Chen** [[GitHub](https://github.com/WaikeiChan)] [[LinkedIn](https://www.linkedin.com/in/weiqi-ricky-chen-2b04b2ab)]
+
 ![Demo (Cornell Box)](img/banner.png)
+
+This is the final project for CIS 565: GPU Programming. The goal of the project is to denoise Monte-Carlo path traced images with low sample counts. We attempted to two methods:
+
+ - Spatiotemporal (Spatiotemporal Variance Guided Filtering)
+ - Machine Learning (Kernel Predicting Convolutional Networks)
+
+The machine learning part of the project can be found in this [Link](kpcn.md).
 
 ## Overview
 
@@ -8,18 +19,11 @@ Physically based monte-carlo path tracing can produce photo-realistc rendering o
 
 *Signal processing* and *Accumulation* are two major techniques of denosing. Signal processing techniques blur out noise by applying spatial filters or machine learning to the output; Accumulation techniques make it possible to reuse samples in a moving scene by associating pixel between frames. *Spatio-Temporal Variance Guided Filter* [Schied 2017] combines these two techniques and enables high quaility real-time path tracing for dynamic scenes. 
 
-## Demo scenes
-![](img/demo.gif)
-
-<img src="img/chairtest2.gif" style="zoom:71%;" />
-
-<img src="img/large1.gif" style="zoom:51%;" />
-
-## SVGF Pipeline
+## Pipeline
 ![Pipeline](img/svgf.png)
 
 ### Path Tracing
-The project is developed based on [CIS 565 CUDA Path Tracer](https://github.com/ZheyuanXie/Project3-CUDA-Path-Tracer). 
+The project is developed based on [CIS 565 Project 3](https://github.com/ZheyuanXie/Project3-CUDA-Path-Tracer). Addtion to the project 3, we implemented texture mapping and bounding volume hierarchy to accelerate path tracing for complex meshes. To reduce sample variance, if the ray hit matte surface, we trace a shadow ray directly to the light.
 
 ### Temporal Accumulation
 To reuse samples from the previous frame, we reproject each pixel sample to its prior frame and calculate its screen space coordinate. This is completed in the following steps:
@@ -37,8 +41,7 @@ The spatial filtering is accomplished by a-trous wavelet transform. As illustrat
 A set of edge stopping functions prevent the filter from overblurring important details. Three edge-stopping functions based on position, normal, and luminance are used as in *Edge-avoiding À-Trous wavelet transform for fast global illumination filtering*  [Dammertz et al. 2010]. The standard deviation term in luminance edge-stopping function is based on variance estimation. This will guide the filter to blur more in regions with more uncertainty, i.e. large variance.
 
 ## Performance
-
-In the SVGF project, our codes mainly falls into two parts. The tracing part and the filtering one. Here, we record their time consuming.
+The chart below provides a breakdown for different stages in the SVGF pipeline.
 
 ![](img/one_scene.png)
 
@@ -51,6 +54,27 @@ In different scenes, as the mesh count increases, the time cost of tracing incre
 ![](img/count_increase.png)
 
 When we increase the filter count of A-Tours, the time costing increase. That's easy to come up with since we do the filtering more times. 
+
+<!-- In the SVGF project, our codes mainly falls into two parts. The tracing part and the filtering one. Here, we record their time consuming.
+
+![](img/one_scene.png)
+
+We test in the middle scene,  as the chart shows, we spend lots of time in tracing the scene. The Denoise part only takes around 7% of time.
+
+![](img/different_scene.png)
+
+In different scenes, as the mesh count increases, the time cost of tracing increase rapidly. However, the time cost of A-Tours filtering seems to be similar in our test cases. 
+
+![](img/count_increase.png)
+
+When we increase the filter count of A-Tours, the time costing increase. That's easy to come up with since we do the filtering more times.  -->
+
+## Demo
+<!-- ![](img/demo.gif) -->
+
+<!-- <img src="img/chairtest2.gif" style="zoom:71%;" /> -->
+
+<img src="img/large1.gif" style="zoom:51%;" />
 
 ## Build Instruction
  1. Clone this repository.
@@ -69,44 +93,9 @@ When we increase the filter count of A-Tours, the time costing increase. That's 
  4. Configure the project in `Visual Studio 2017` and `x64`, then click Generate.
  5. Open Visual Studio project and build in release mode.
 
-## Kernel-Predicting Convolutional Networks for Denoising Monte Carlo Renderings
-
-![network](img/network.png)
-
-### Overview
-On the machine learning side of denoising, we adopt the paper with the network architecture above to denoise. Particularly, the diffuse and specular components are trained to denoise separately before they are combined together to reconstruct the original image. We adopt the KPCN mode of the network, which means we will yield a kernel for denoising the input images. This is proven by the authors to converge 5-6x faster than directly yielding denoised images.
-
-### Input Components
-
-For both the diffuse component inputs and the specular ones, the inputs to the network consist of the following channel:
-* diffuse/specular image (32 spp), gradients in both directions, variance
-* gradients of depth in both directions
-* gradients of normal in both directions
-* gradients of albedo in both directions
-* ground truth diffuse/specular image (550 spp)
-
-The diffuse components are preprocessed by dividing by the albedo to only keep the illumination map, while the specular components go through logarithmic transform to reduce the range of pixel values for more stable training.
-
-
-### Training
-
-Both subnetworks consist of 9 Convolutional layers, optimized by ADAM optimizer with a batch-size of 16, learning rate of 1e-4 for specular network and 1e-5 for diffuse network. We train for 10 epochs in total.
-
-| noisy input - 32spp | denoised - 32spp | GT - 550spp |
-| - | - | - |
-| ![network](img/noisy.png) | ![network](img/denoised.png) | ![network](img/gt.png) |
-
-
-![loss](img/loss.png)
-
-
-## Team
- - Zheyuan Xie
- - Yan Dong
- - Weiqi Chen
-
 ## Acknowledgments
- - [1] [Spatiotemporal Variance-Guided Filtering: Real-Time Reconstruction for Path-Traced Global Illumination](https://research.nvidia.com/publication/2017-07_Spatiotemporal-Variance-Guided-Filtering%3A): This is the primary paper the project is based on.
+ - [1] [Spatiotemporal Variance-Guided Filtering: Real-Time Reconstruction for Path-Traced Global Illumination](https://research.nvidia.com/publication/2017-07_Spatiotemporal-Variance-Guided-Filtering%3A): The SVGF part of the project is primarily implemented based on this paper.
  - [2] [Edge-avoiding À-Trous wavelet transform for fast global illumination filtering](https://dl.acm.org/citation.cfm?id=1921491): This paper with its code sample also helped a lot in the spatial filtering part.
  - [3] [Alain Galvan's Blog](https://alain.xyz/blog/raytracing-denoising): Alain's blog posts, as well as his Nov. 20 lecture talk at UPenn gave us a good overview and understanding of denosing technoligies.
- - [4] [Dear ImGui](https://github.com/ocornut/imgui): This library enable us to create GUI overlay with ease.
+ - [4] [Dear ImGui](https://github.com/ocornut/imgui): This library lets us create pretty-looking GUI with ease.
+ - [5] [Kernel-Predicting Convolutional Networks for Denoising Monte Carlo Renderings](https://www.ece.ucsb.edu/~psen/Papers/SIGGRAPH17_KPCN_LoRes.pdf): The machine learning part of the project is implemented based on this paper.
