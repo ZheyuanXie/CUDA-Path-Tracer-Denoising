@@ -76,6 +76,30 @@ When we increase the filter count of A-Tours, the time costing increase. That's 
 
 <img src="img/large1.gif" style="zoom:51%;" />
 
+## Project Timeline
+### Milestone 1 (Nov. 18)
+ - Revised codes from hw3 to generate data for next milestone.
+ - Wrote framework code based on project 3.
+ - Implemented A-Trous Wavelet Transform for spatial filtering.
+
+[MS1 Slides](slides/MS1.pdf)
+### Milestone 2 (Nov. 25)
+ - Implemented texture mapping.
+ - Built and tested denoising neural network for proof of concept.
+ - Completed temporal accumulation and variance estimation with bugs.
+
+[MS2 Slides](slides/MS2.pdf)
+### Milestone 3 (Dec. 2)
+ - Finised all major components in SVGF, achieved real-time denoising for basic scenes.
+ - Constructed complex scenes
+ - Batch-generated training data for denosing nerual network.
+ - Added a GUI control panel for SVGF.
+
+[MS3 Slides](slides/MS3.pdf)
+### Final (Dec. 9)
+ - Refactored path tracer, resolved bugs and optimized performance for SVGF.
+ - Generated denoised images using trained network.
+
 ## Build Instruction
  1. Clone this repository.
  ```
