@@ -1,4 +1,4 @@
-Path Tracing Denoising
+CUDA SVGF
 ================
 CIS 565: *GPU Programming and Architecture* Final Project
  - **Zheyuan Xie** [[GitHub](https://github.com/ZheyuanXie)] [[LinkedIn](https://www.linkedin.com/in/zheyuan-xie)]
@@ -20,7 +20,7 @@ Physically based monte-carlo path tracing can produce photo-realistc rendering o
 
 ## Demo
 
-![](img/chairtest2.gif)
+![](img/demo.gif)
 
 ## Path Tracing
 The project is developed based on [CIS 565 Project 3](https://github.com/ZheyuanXie/Project3-CUDA-Path-Tracer). Addtion to the project 3, we implemented texture mapping and bounding volume hierarchy to accelerate path tracing for complex meshes. To reduce sample variance, if the ray hit matte surface, we trace a shadow ray directly to the light.
@@ -42,67 +42,6 @@ The spatial filtering is accomplished by a-trous wavelet transform. As illustrat
 ![](img/atrous_kernel.png)
 
 A set of edge stopping functions prevent the filter from overblurring important details. Three edge-stopping functions based on position, normal, and luminance are used as in *Edge-avoiding À-Trous wavelet transform for fast global illumination filtering*  [Dammertz et al. 2010]. The standard deviation term in luminance edge-stopping function is based on variance estimation. This will guide the filter to blur more in regions with more uncertainty, i.e. large variance.
-
-### Performance Analysis
-The chart below provides a breakdown for different stages in the SVGF pipeline.
-
-![](img/one_scene.png)
-
-We test in the middle scene,  as the chart shows, we spend lots of time in tracing the scene. The Denoise part only takes around 7% of time.
-
-![](img/different_scene.png)
-
-In different scenes, as the mesh count increases, the time cost of tracing increase rapidly. However, the time cost of A-Tours filtering seems to be similar in our test cases. 
-
-![](img/count_increase.png)
-
-When we increase the filter count of A-Tours, the time costing increase. That's easy to come up with since we do the filtering more times. 
-
-<!-- In the SVGF project, our codes mainly falls into two parts. The tracing part and the filtering one. Here, we record their time consuming.
-
-![](img/one_scene.png)
-
-We test in the middle scene,  as the chart shows, we spend lots of time in tracing the scene. The Denoise part only takes around 7% of time.
-
-![](img/different_scene.png)
-
-In different scenes, as the mesh count increases, the time cost of tracing increase rapidly. However, the time cost of A-Tours filtering seems to be similar in our test cases. 
-
-![](img/count_increase.png)
-
-When we increase the filter count of A-Tours, the time costing increase. That's easy to come up with since we do the filtering more times.  -->
-
-## Denoising - Machine Learning Method
-**Kernel-Predicting Convolutional Networks**
-
-![network](img/network.png)
-
-### Overview
-On the machine learning side of denoising, we adopt the paper with the network architecture above to denoise. Particularly, the diffuse and specular components are trained to denoise separately before they are combined together to reconstruct the original image. We adopt the KPCN mode of the network, which means we will yield a kernel for denoising the input images. This is proven by the authors to converge 5-6x faster than directly yielding denoised images.
-
-### Input Components
-
-For both the diffuse component inputs and the specular ones, the inputs to the network consist of the following channel:
-* diffuse/specular image (32 spp), gradients in both directions, variance
-* gradients of depth in both directions
-* gradients of normal in both directions
-* gradients of albedo in both directions
-* ground truth diffuse/specular image (550 spp)
-
-The diffuse components are preprocessed by dividing by the albedo to only keep the illumination map, while the specular components go through logarithmic transform to reduce the range of pixel values for more stable training.
-
-
-### Training
-
-Both subnetworks consist of 9 Convolutional layers, optimized by ADAM optimizer with a batch-size of 16, learning rate of 1e-4 for specular network and 1e-5 for diffuse network. We train for 10 epochs in total.
-
-![loss](img/loss.png)
-
-### Results
-
-| Noisy Input - 32 spp | Denoised - 32 spp | Ground Truth - 550 spp |
-| - | - | - |
-| ![network](img/noisy.png) | ![network](img/denoised.png) | ![network](img/gt.png) |
 
 ## Project Timeline
 ### Milestone 1 (Nov. 18)
