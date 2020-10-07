@@ -12,6 +12,8 @@ This is the final project for CIS 565: GPU Programming. The goal of the project 
  - Spatiotemporal (Spatiotemporal Variance Guided Filtering)
  - Machine Learning (Kernel Predicting Convolutional Networks)
 
+This repo contains our CUDA implementation of the Spatiotemporal method.
+
 ## Overview
 
 Physically based monte-carlo path tracing can produce photo-realistc rendering of computer graphics scenes. However, even with today's hardware it is impossible to converge a scene quickly and meet the performance requirement for real-time interactive application such as games. To bring path tracing to real-time, we reduce sample counts per pixel to 1 and apply post-processing to eliminate noise.
@@ -43,6 +45,27 @@ The spatial filtering is accomplished by a-trous wavelet transform. As illustrat
 
 A set of edge stopping functions prevent the filter from overblurring important details. Three edge-stopping functions based on position, normal, and luminance are used as in *Edge-avoiding À-Trous wavelet transform for fast global illumination filtering*  [Dammertz et al. 2010]. The standard deviation term in luminance edge-stopping function is based on variance estimation. This will guide the filter to blur more in regions with more uncertainty, i.e. large variance.
 
+## Build Instruction
+ 0. Make sure you have the required software installed:
+  - Visual Studio (2017 or 2019)
+  - CMake (Latest)
+  - CUDA Toolkit (10.0)
+ 1. Clone this repository.
+ ```
+ $ git clone https://github.com/ZheyuanXie/CUDA-Path-Tracer-Denoising
+ $ cd CUDA-Path-Tracer-Denoising
+ ```
+ 2. Create a build folder.
+ ```
+ $ mkdir build && cd build
+ ```
+ 3. Run CMake GUI.
+ ```
+ $ cmake-gui ..
+ ```
+ 4. Configure the project in `Visual Studio 2017` or `Visual Stuio 2019` and `x64`, then click Generate.
+ 5. Open Visual Studio project and build in release mode.
+
 ## Project Timeline
 ### Milestone 1 (Nov. 18)
  - Revised codes from hw3 to generate data for next milestone.
@@ -66,23 +89,6 @@ A set of edge stopping functions prevent the filter from overblurring important 
 ### Final (Dec. 9)
  - Refactored path tracer, resolved bugs and optimized performance for SVGF.
  - Generated denoised images using trained network.
-
-## Build Instruction
- 1. Clone this repository.
- ```
- $ git clone https://github.com/ZheyuanXie/CUDA-Path-Tracer-Denoising
- $ cd CUDA-Path-Tracer-Denoising
- ```
- 2. Create a build folder.
- ```
- $ mkdir build && cd build
- ```
- 3. Run CMake GUI.
- ```
- $ cmake-gui ..
- ```
- 4. Configure the project in `Visual Studio 2017` and `x64`, then click Generate.
- 5. Open Visual Studio project and build in release mode.
 
 ## Acknowledgments
  - [1] [Spatiotemporal Variance-Guided Filtering: Real-Time Reconstruction for Path-Traced Global Illumination](https://research.nvidia.com/publication/2017-07_Spatiotemporal-Variance-Guided-Filtering%3A): The SVGF part of the project is primarily implemented based on this paper.
