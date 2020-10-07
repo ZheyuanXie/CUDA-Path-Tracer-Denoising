@@ -73,7 +73,6 @@ set(headers
     src/sceneStructs.h
     src/preview.h
     src/utilities.h
-    src/tiny_obj_loader.h
     src/denoise.h
     src/boundingbox.h
     src/bvhtree.h
@@ -88,23 +87,9 @@ set(sources
     src/scene.cpp
     src/preview.cpp
     src/utilities.cpp
-    src/tiny_obj_loader.cc
     src/denoise.cu
     src/boundingbox.cpp
     src/bvhtree.cpp
-    src/imgui/imconfig.h
-    src/imgui/imgui.cpp
-    src/imgui/imgui.h
-    src/imgui/imgui_draw.cpp
-    src/imgui/imgui_internal.h
-    src/imgui/imgui_widgets.cpp
-    src/imgui/imgui_demo.cpp
-    src/imgui/imgui_impl_glfw.cpp
-    src/imgui/imgui_impl_glfw.h
-    src/imgui/imgui_impl_opengl2.cpp
-    src/imgui/imgui_impl_opengl2.h
-    src/imgui/imgui_impl_opengl3.cpp
-    src/imgui/imgui_impl_opengl3.h
     )
 
 set(imgui
@@ -123,15 +108,21 @@ set(imgui
     src/imgui/imgui_impl_opengl3.h
     )
 
+set(tinyobjloader
+    src/tinyobjloader/tiny_obj_loader.cc
+    src/tinyobjloader/tiny_obj_loader.h
+    )
+
 list(SORT headers)
 list(SORT sources)
 list(SORT imgui)
 
 source_group(Headers FILES ${headers})
 source_group(Sources FILES ${sources})
-source_group("imgui" FILES ${imgui})
+source_group(ImGui FILES ${imgui})
+source_group(TinyObjLoader FILES ${tinyobjloader})
 
-cuda_add_executable(${CMAKE_PROJECT_NAME} ${sources} ${headers})
+cuda_add_executable(${CMAKE_PROJECT_NAME} ${sources} ${headers} ${imgui} ${tinyobjloader})
 target_link_libraries(${CMAKE_PROJECT_NAME}
     ${LIBRARIES}
     )
